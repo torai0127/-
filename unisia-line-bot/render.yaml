@@ -1,0 +1,22 @@
+# Render.com Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  # 海外相談チャットボット
+  - type: web
+    name: unisia-consultation-bot
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3002
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /health

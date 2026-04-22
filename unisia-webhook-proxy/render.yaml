@@ -1,0 +1,28 @@
+# Render.com Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  # 中継サーバー（Webhook Proxy）
+  - type: web
+    name: unisia-webhook-proxy
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: CONSULTATION_BOT_URL
+        sync: false
+      - key: FLIGHT_BOT_URL
+        sync: false
+      - key: MA_TOOL
+        value: elme
+      - key: ELME_WEBHOOK_URL
+        sync: false
+      - key: DEFAULT_FORWARD
+        value: ma
+      - key: ADMIN_API_KEY
+        generateValue: true
+    healthCheckPath: /health

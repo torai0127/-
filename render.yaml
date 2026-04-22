@@ -1,0 +1,77 @@
+# Render.com Blueprint - モノレポ構成
+# 3つのサービスを1つのリポジトリからデプロイ
+
+services:
+  # 1. 中継サーバー（Webhook Proxy）
+  - type: web
+    name: unisia-webhook-proxy
+    runtime: node
+    rootDir: unisia-webhook-proxy
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: CONSULTATION_BOT_URL
+        fromService:
+          name: unisia-consultation-bot
+          type: web
+          property: host
+        # 実際の値は手動設定: https://unisia-consultation-bot.onrender.com/webhook
+      - key: FLIGHT_BOT_URL
+        fromService:
+          name: unisia-flight-bot
+          type: web
+          property: host
+        # 実際の値は手動設定: https://unisia-flight-bot.onrender.com/webhook
+      - key: MA_TOOL
+        value: elme
+      - key: ELME_WEBHOOK_URL
+        sync: false
+      - key: DEFAULT_FORWARD
+        value: ma
+      - key: ADMIN_API_KEY
+        generateValue: true
+    healthCheckPath: /health
+
+  # 2. 海外相談チャットボット
+  - type: web
+    name: unisia-consultation-bot
+    runtime: node
+    rootDir: unisia-line-bot
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3002
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /health
+
+  # 3. 航空券チャットボット
+  - type: web
+    name: unisia-flight-bot
+    runtime: node
+    rootDir: unisia-flight-bot
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /health

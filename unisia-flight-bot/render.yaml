@@ -1,0 +1,22 @@
+# Render.com Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  # 航空券チャットボット
+  - type: web
+    name: unisia-flight-bot
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /health
