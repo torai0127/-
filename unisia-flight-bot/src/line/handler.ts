@@ -43,6 +43,20 @@ function getUserState(userId: string): UserState {
   return userStates.get(userId) || { step: 'idle' };
 }
 
+/**
+ * 航空券検索リクエストかどうか判定
+ */
+function isFlightSearchRequest(message: string): boolean {
+  const flightKeywords = [
+    '航空券', 'フライト', '行きたい', '行き', 
+    'いきたい地域', 'いきたい時期', '期間行きたい',
+    '泊', '人数', '大人', '子供', '出発',
+    '往復', '片道', '格安', 'チケット',
+  ];
+  
+  return flightKeywords.some(keyword => message.includes(keyword));
+}
+
 function setUserState(userId: string, state: UserState): void {
   userStates.set(userId, state);
 }
@@ -77,7 +91,7 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       response = await handleSurveyResponse(userId, userMessage, state);
     } else if (userMessage.includes('治安') || userMessage.includes('安全')) {
       response = await handleSafetyQuery(userMessage);
-    } else if (userMessage.includes('航空券') || userMessage.includes('フライト') || userMessage.includes('行き')) {
+    } else if (isFlightSearchRequest(userMessage)) {
       response = await handleFlightQuery(userId, userMessage);
     } else {
       response = await handleGeneralQuery(userId, userMessage);
@@ -228,15 +242,70 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   const params = await extractFlightParams(message);
   const surveyData = getSurveyResponse(userId);
   
+  // 目的地が特定できない場合
   if (!params?.destination) {
-    const history = getConversationHistory(userId, 5);
-    return await generateFlightResponse(message, history, { surveyData });
+    return `✈️ 航空券をお探しですね！
+
+以下の情報を教えてください：
+
+・行きたい国/地域
+　例）フィリピン、韓国、ハワイ
+
+・出発時期
+　例）3月ごろ、GW、夏休み
+
+・滞在期間
+　例）5泊6日、1週間
+
+・人数
+　例）3人（大人2、子供1）
+
+・出発空港（任意）
+　例）福岡、成田、関空
+
+これらをまとめて送っていただければ、最適な航空券検索リンクをお作りします！`;
   }
   
-  const origin = params.origin || surveyData?.departureAirports?.[0] || '成田';
+  const origin = params.origin || surveyData?.departureAirports?.[0] || '東京';
   const adults = params.adults || params.passengers || 1;
   const children = params.children || 0;
   const infantsOnLap = params.infantsOnLap || 0;
+  const totalPassengers = adults + children;
+  
+  // 日付情報がない場合は、曖昧な検索として処理
+  if (!params.departureDate && !params.departureDateStart) {
+    // 滞在期間のみ指定されている場合、直近3ヶ月で検索
+    const today = new Date();
+    const threeMonthsLater = new Date(today);
+    threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+    
+    const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
+    const flexibleParams = {
+      origin,
+      destination: params.destination,
+      departureDateStart: today.toISOString().split('T')[0],
+      departureDateEnd: threeMonthsLater.toISOString().split('T')[0],
+      stayDuration: params.stayDuration || 7,
+      adults,
+      children,
+      infantsOnLap,
+      tripType,
+      cabinClass: 'economy' as const,
+    };
+    
+    const searchUrl = generateFlexibleDateSearchUrl(flexibleParams);
+    
+    let response = `✈️ 航空券検索結果\n\n`;
+    response += `📍 ${origin} → ${params.destination}\n`;
+    response += `👥 ${totalPassengers}名`;
+    if (children > 0) response += `（大人${adults}、子供${children}）`;
+    response += `\n`;
+    if (params.stayDuration) response += `📅 ${params.stayDuration}日間\n`;
+    response += `\n🔗 最安値を探す\n${searchUrl}\n\n`;
+    response += `💡 出発時期を教えていただければ、より正確な検索ができます！`;
+    
+    return response;
+  }
   
   // 曖昧な日付指定の場合（「5月」「5月末」など）
   if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
@@ -246,7 +315,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
       destination: params.destination,
       departureDateStart: params.departureDateStart,
       departureDateEnd: params.departureDateEnd,
-      stayDuration: params.stayDuration,
+      stayDuration: params.stayDuration || 7,
       adults,
       children,
       infantsOnLap,
@@ -260,7 +329,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     let response = `✈️ 航空券検索条件（最安値を探す）\n\n${description}\n\n`;
     response += `🔗 この期間の最安値を見る\n${searchUrl}\n\n`;
     response += `💡 日付グリッドで最安値の日程が一目でわかります！\n`;
-    response += `火・水曜出発が比較的安いこともあります。`;
+    response += `火・水曜出発が比較的安いことも多いです。`;
     
     return response;
   }
@@ -285,7 +354,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
 
     let response = `✈️ 航空券検索条件\n\n${description}\n\n`;
     response += `🔗 Google Flights で検索結果を見る\n${entryUrl}\n\n`;
-    response += `💡 火・水曜出発が比較的安いこともあります。`;
+    response += `💡 火・水曜出発が比較的安いことも多いです。`;
     
     return response;
   }

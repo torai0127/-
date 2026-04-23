@@ -87,17 +87,30 @@ export async function extractFlightParams(userMessage: string): Promise<Extracte
   const todayStr = today.toISOString().split('T')[0];
 
   const extractPrompt = `以下のメッセージから航空券検索の条件を抽出してください。
-該当する情報がない場合はnullを返してください。
 今日は${todayStr}です。年が指定されていない場合は${currentYear}年と仮定してください。
+過去の日付の場合は翌年と仮定してください。
 
 メッセージ: "${userMessage}"
+
+【入力形式の例】
+■ 自由形式:
+「フィリピンに3月頃5泊6日で3人で行きたい」
+
+■ リスト形式（エルメから送信される形式）:
+「いきたい地域: フィリピン
+いきたい時期: 3月ごろ
+期間: 5泊6日
+人数: 3人 妻・子供」
+
+■ キーワードが含まれるメッセージ:
+「・いきたい地域」「いきたい時期」「期間行きたい」「合計人数」などを含む場合も解析
 
 【日付の解釈ルール】
 ■ 具体的な日付がある場合:
 - 「6月28日」「2026-06-28」→ departureDate: "2026-06-28", isFlexibleDate: false
 
 ■ 曖昧な日付指定の場合（isFlexibleDate: true にする）:
-- 「5月」「5月中」→ departureDateStart: "2026-05-01", departureDateEnd: "2026-05-31"
+- 「5月」「5月中」「5月ごろ」「5月頃」→ departureDateStart: "2026-05-01", departureDateEnd: "2026-05-31"
 - 「5月末」「5月下旬」→ departureDateStart: "2026-05-20", departureDateEnd: "2026-05-31"
 - 「5月前半」「5月上旬」→ departureDateStart: "2026-05-01", departureDateEnd: "2026-05-15"
 - 「GW」「ゴールデンウィーク」→ departureDateStart: "2026-04-29", departureDateEnd: "2026-05-06"
@@ -108,7 +121,7 @@ export async function extractFlightParams(userMessage: string): Promise<Extracte
 
 ■ 滞在期間の解釈:
 - 「1週間」「7日間」→ stayDuration: 7
-- 「3泊4日」→ stayDuration: 4
+- 「3泊4日」「5泊6日」→ stayDuration: 4, 6 (泊数+1)
 - 「2週間」→ stayDuration: 14
 - 「1ヶ月」→ stayDuration: 30
 - 「3ヶ月」→ stayDuration: 90
@@ -117,12 +130,13 @@ export async function extractFlightParams(userMessage: string): Promise<Extracte
 - 「3人」「3名」→ adults: 3
 - 「大人2人、子供1人」→ adults: 2, children: 1
 - 「夫婦と子供2人」「家族4人」→ adults: 2, children: 2
+- 「3人 妻・子供」「家族3人」→ adults: 2, children: 1 (配偶者と子供がいる場合)
 - 「赤ちゃん連れ」→ infantsOnLap: 1
 
 JSON形式で回答（日本語の地名はそのまま）:
 {
-  "origin": "出発地（空港名または都市名）",
-  "destination": "目的地（国名または都市名）",
+  "origin": "出発地（空港名または都市名、不明ならnull）",
+  "destination": "目的地（国名または都市名、必須）",
   "isFlexibleDate": true/false,
   "departureDate": "具体的な出発日（YYYY-MM-DD、isFlexibleDate=falseの場合）",
   "departureDateStart": "出発期間の開始日（YYYY-MM-DD、isFlexibleDate=trueの場合）",
@@ -133,7 +147,10 @@ JSON形式で回答（日本語の地名はそのまま）:
   "children": 子供の人数（数字、デフォルト0）,
   "infantsOnLap": 幼児の人数（数字、デフォルト0）,
   "tripType": "round_trip" または "one_way"
-}`;
+}
+
+注意: 目的地（destination）が全く特定できない場合のみnullを返してください。
+それ以外は部分的な情報でもできるだけ抽出してください。`;
 
   try {
     const completion = await openai.chat.completions.create({
