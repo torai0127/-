@@ -304,6 +304,461 @@ $21（約3,000円）
 初海外にも最適です✨`,
 };
 
+// 各国の総合旅行情報
+const COUNTRY_TRAVEL_INFO: Record<string, {
+  climate: string;
+  price: string;
+  wifi: string;
+  food: string;
+  culture: string;
+  tips: string;
+}> = {
+  'アメリカ': {
+    climate: `【気候】
+・広大なため地域差が大きい
+・西海岸（LA等）: 年中温暖
+・東海岸（NY等）: 夏暑く冬寒い
+・ハワイ: 年中常夏
+・ベストシーズン: 4-6月、9-10月`,
+    price: `【物価】
+・日本より20-30%高い
+・チップ文化あり（15-20%が目安）
+・ファストフード: 約1,500円
+・レストラン: 3,000-5,000円
+・ホテル: 15,000-30,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・カフェ等で無料Wi-Fi普及
+・SIM: T-Mobile、AT&T等
+・eSIM: 10日5GB約2,000円〜
+・Wi-Fiレンタル: 1日800円〜`,
+    food: `【グルメ】
+・ハンバーガー、ステーキが本場
+・量が多い（シェア可）
+・チップ必須（税抜の15-20%）
+・タップウォーター（水道水）は無料
+・ベジタリアン対応も豊富`,
+    culture: `【文化・マナー】
+・チップ文化（必須！）
+・フレンドリーな接客が基本
+・レディーファースト
+・公共の場での飲酒禁止
+・年齢確認厳格（ID必携）`,
+    tips: `【旅のコツ】
+・チップ用に1ドル札を多めに
+・Uber/Lyftが便利
+・国立公園パス($80)がお得
+・アウトレットでブランド品を`,
+  },
+
+  'フィリピン': {
+    climate: `【気候】
+・熱帯性気候（年中暑い）
+・乾季: 12-5月（ベストシーズン）
+・雨季: 6-11月（スコールあり）
+・平均気温: 26-32℃
+・台風シーズン: 7-10月`,
+    price: `【物価】
+・日本の約1/3〜1/5
+・ローカル食: 200-500円
+・レストラン: 500-1,500円
+・マッサージ: 500-1,000円/1h
+・ホテル: 2,000-5,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・ショッピングモールでWi-Fiあり
+・SIM: Globe、Smart（空港で購入）
+・30日2GB: 約300円〜
+・速度は日本より遅め`,
+    food: `【グルメ】
+・アドボ（肉の煮込み）
+・シニガン（酸っぱいスープ）
+・レチョン（豚の丸焼き）
+・マンゴーが絶品！
+・ジョリビー（現地ファストフード）`,
+    culture: `【文化・マナー】
+・フィリピーノホスピタリティ（親切）
+・時間にルーズ（フィリピンタイム）
+・宗教心が強い（カトリック）
+・家族を大切にする文化
+・チップは気持ち程度でOK`,
+    tips: `【旅のコツ】
+・Grabアプリ必須（タクシー配車）
+・現金も多めに持つ（カード不可多い）
+・セブなら英語留学がおすすめ
+・アイランドホッピングを体験して！`,
+  },
+
+  '韓国': {
+    climate: `【気候】
+・日本と似ている（四季あり）
+・春（3-5月）: 桜シーズン
+・夏（6-8月）: 暑い・雨季
+・秋（9-11月）: 紅葉ベストシーズン
+・冬（12-2月）: 寒い（-10℃も）`,
+    price: `【物価】
+・日本とほぼ同じか少し安い
+・屋台: 500-1,000円
+・食堂: 800-1,500円
+・焼肉: 2,000-4,000円
+・ホテル: 5,000-15,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・カフェ等で無料Wi-Fi豊富
+・SIM: KT、SK等（空港で）
+・7日5GB: 約2,000円
+・Wi-Fiレンタル: 1日500円〜`,
+    food: `【グルメ】
+・サムギョプサル（豚バラ焼肉）
+・チキン（フライドチキン）
+・ビビンバ、冷麺
+・トッポギ（餅の甘辛炒め）
+・カフェ文化が発達`,
+    culture: `【文化・マナー】
+・年上を敬う文化
+・お酒は横を向いて飲む
+・靴を脱ぐ店も多い
+・チップ不要
+・整形・美容への意識が高い`,
+    tips: `【旅のコツ】
+・T-moneyカード必須（交通系IC）
+・深夜までお店が開いている
+・美容・コスメがお得
+・週末より平日がおすすめ`,
+  },
+
+  'タイ': {
+    climate: `【気候】
+・常夏（年中暑い）
+・乾季: 11-2月（ベストシーズン）
+・暑季: 3-5月（猛暑40℃近く）
+・雨季: 6-10月（スコール）
+・北部は朝晩涼しい`,
+    price: `【物価】
+・日本の約1/3
+・屋台: 100-300円
+・レストラン: 500-1,500円
+・マッサージ: 500-1,500円/1h
+・ホテル: 2,000-6,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・カフェ、ホテルでWi-Fiあり
+・SIM: AIS、True（空港で）
+・8日15GB: 約500円〜
+・とにかく安い！`,
+    food: `【グルメ】
+・パッタイ（焼きそば）
+・トムヤムクン
+・グリーンカレー
+・マンゴーもち米
+・屋台で十分美味しい！`,
+    culture: `【文化・マナー】
+・仏教国（寺院では肌を隠す）
+・王室への敬意は絶対
+・頭を触らない（神聖な部位）
+・足の裏を人に向けない
+・チップは気持ち程度`,
+    tips: `【旅のコツ】
+・Grabアプリ必須
+・値段交渉は笑顔で
+・寺院用の羽織もの持参
+・タイパンツをお土産に`,
+  },
+
+  '台湾': {
+    climate: `【気候】
+・亜熱帯（北部）/熱帯（南部）
+・春（3-5月）: 温暖・雨少ない
+・夏（6-9月）: 暑い・台風あり
+・秋（10-11月）: ベストシーズン
+・冬（12-2月）: 北部は肌寒い`,
+    price: `【物価】
+・日本の約2/3
+・夜市: 200-500円
+・レストラン: 500-1,500円
+・タピオカ: 200-400円
+・ホテル: 4,000-10,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・コンビニ等でWi-Fiあり
+・SIM: 中華電信、台湾大哥大
+・5日使い放題: 約1,500円
+・空港カウンターで購入可`,
+    food: `【グルメ】
+・小籠包（鼎泰豐が有名）
+・魯肉飯（ルーローファン）
+・牛肉麺
+・タピオカミルクティー
+・夜市で食べ歩き！`,
+    culture: `【文化・マナー】
+・親日的でフレンドリー
+・日本語が通じることも
+・MRT内は飲食禁止
+・チップ不要
+・レシートは宝くじ付き`,
+    tips: `【旅のコツ】
+・悠遊カード必須（交通系IC）
+・九份は平日午前がおすすめ
+・夜市は夕方から
+・茶藝館でお茶体験を`,
+  },
+
+  'ハワイ': {
+    climate: `【気候】
+・常夏（年中温暖）
+・乾季: 4-10月（ベストシーズン）
+・雨季: 11-3月（短時間の雨）
+・平均気温: 24-30℃
+・朝晩は涼しい`,
+    price: `【物価】
+・アメリカ本土より高い
+・プレートランチ: 1,500円〜
+・レストラン: 3,000-6,000円
+・ABCストアで節約可
+・ホテル: 20,000-50,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・カフェ、ホテルでWi-Fiあり
+・SIM: T-Mobile等（ESTA国）
+・Wi-Fiレンタル: 1日800円〜
+・eSIM: 7日3GB約2,500円`,
+    food: `【グルメ】
+・ロコモコ
+・ポキ（マグロ漬け）
+・ガーリックシュリンプ
+・アサイーボウル
+・パンケーキ`,
+    culture: `【文化・マナー】
+・アロハスピリット（おおらか）
+・チップ文化（15-20%）
+・ビーチでの飲酒禁止
+・環境保護意識が高い
+・日焼け止めに規制あり`,
+    tips: `【旅のコツ】
+・レンタカーがあると便利
+・早朝のダイヤモンドヘッド
+・ノースショアでガーリックシュリンプ
+・免税店でブランド品を`,
+  },
+
+  'シンガポール': {
+    climate: `【気候】
+・常夏（年中暑い）
+・雨季: 11-1月（スコール多め）
+・乾季: 2-10月
+・平均気温: 27-32℃
+・室内は冷房が強い`,
+    price: `【物価】
+・日本と同程度〜やや高い
+・ホーカー: 500-800円
+・レストラン: 2,000-5,000円
+・ホテル: 10,000-30,000円/泊
+・観光施設は高め`,
+    wifi: `【Wi-Fi・通信】
+・観光地でWi-Fiあり
+・SIM: Singtel、StarHub
+・7日100GB: 約1,500円
+・空港で購入可`,
+    food: `【グルメ】
+・チキンライス（海南鶏飯）
+・チリクラブ
+・ラクサ（麺料理）
+・カヤトースト
+・ホーカー（屋台村）がおすすめ`,
+    culture: `【文化・マナー】
+・法律が厳格（罰金多い）
+・ガム持込禁止
+・MRT内飲食禁止
+・ゴミのポイ捨て厳禁
+・チップ不要`,
+    tips: `【旅のコツ】
+・EZリンクカード（交通系IC）
+・ガーデンズバイザベイは夜に
+・マリーナベイサンズの展望台
+・冷房対策の羽織もの必須`,
+  },
+
+  'ベトナム': {
+    climate: `【気候】
+・北部（ハノイ）: 四季あり
+・中部（ダナン）: 雨季9-12月
+・南部（ホーチミン）: 常夏
+・ベストシーズン: 11-4月
+・雨季でもスコール型`,
+    price: `【物価】
+・日本の約1/4〜1/5
+・フォー: 100-300円
+・レストラン: 300-1,000円
+・マッサージ: 500-1,000円/1h
+・ホテル: 2,000-5,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・カフェ等でWi-Fi普及
+・SIM: Viettel、Mobifone
+・30日5GB: 約300円〜
+・激安！空港で購入を`,
+    food: `【グルメ】
+・フォー（米麺）
+・バインミー（サンドイッチ）
+・生春巻き
+・ブンチャー
+・ベトナムコーヒー`,
+    culture: `【文化・マナー】
+・値段交渉が基本
+・バイク社会（横断注意！）
+・フレンドリーだが押しが強い
+・チップは気持ち程度
+・ベトナム戦争の歴史を尊重`,
+    tips: `【旅のコツ】
+・Grabアプリ必須
+・スマホは道端で出さない
+・値段交渉は笑顔で強気に
+・アオザイをお土産に`,
+  },
+
+  'オーストラリア': {
+    climate: `【気候】
+・南半球で季節が逆
+・夏（12-2月）: 暑い
+・冬（6-8月）: 温暖（北部は暖かい）
+・紫外線が非常に強い
+・ベストシーズン: 9-11月（春）`,
+    price: `【物価】
+・日本より20-30%高い
+・カフェ: 1,500-2,000円
+・レストラン: 2,500-5,000円
+・最低賃金が高い国
+・ホテル: 10,000-25,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・カフェ等でWi-Fiあり
+・SIM: Optus、Telstra
+・28日35GB: 約3,000円
+・国土が広いので要注意`,
+    food: `【グルメ】
+・オージービーフ
+・ミートパイ
+・フィッシュ&チップス
+・フラットホワイト（コーヒー）
+・ベジミート（好み分かれる）`,
+    culture: `【文化・マナー】
+・フレンドリーでカジュアル
+・No worries（気にしない）精神
+・チップ不要（サービス良ければ）
+・エコ意識が高い
+・時間にルーズな面も`,
+    tips: `【旅のコツ】
+・日焼け止め必須（SPF50以上）
+・野生動物に近づきすぎない
+・キャッシュレス普及
+・ワーホリで稼ぐ人も多い`,
+  },
+
+  'グアム': {
+    climate: `【気候】
+・常夏（年中暖かい）
+・乾季: 12-6月（ベストシーズン）
+・雨季: 7-11月（スコールあり）
+・平均気温: 26-30℃
+・台風シーズンに注意`,
+    price: `【物価】
+・日本と同程度〜やや高い
+・ファストフード: 1,200円〜
+・レストラン: 2,500-4,000円
+・免税でブランド品がお得
+・ホテル: 10,000-25,000円/泊`,
+    wifi: `【Wi-Fi・通信】
+・ホテル、ショッピングセンターでWi-Fi
+・SIM: IT&E、Docomo Pacific
+・Wi-Fiレンタル: 1日700円〜
+・日本からのレンタルが便利`,
+    food: `【グルメ】
+・チャモロ料理（地元料理）
+・BBQリブ
+・レッドライス
+・アメリカンステーキ
+・サンデーブランチがおすすめ`,
+    culture: `【文化・マナー】
+・チャモロ文化（先住民族）
+・アメリカ文化ベース
+・チップ文化（15-18%）
+・フレンドリー
+・日本人観光客に慣れている`,
+    tips: `【旅のコツ】
+・レンタカーがあると便利
+・恋人岬で夕日を
+・Kマートでお土産を
+・タモン以外も探索して`,
+  },
+};
+
+/**
+ * 国名を特定する
+ */
+function detectCountry(message: string): string | null {
+  const countries = Object.keys(COUNTRY_SAFETY_INFO);
+  for (const country of countries) {
+    if (message.includes(country)) {
+      return country;
+    }
+  }
+  
+  const aliases: Record<string, string> = {
+    '米国': 'アメリカ',
+    'USA': 'アメリカ',
+    'US': 'アメリカ',
+    'セブ': 'フィリピン',
+    'マニラ': 'フィリピン',
+    'ソウル': '韓国',
+    'プサン': '韓国',
+    '釜山': '韓国',
+    'バンコク': 'タイ',
+    'プーケット': 'タイ',
+    'チェンマイ': 'タイ',
+    '台北': '台湾',
+    '高雄': '台湾',
+    'ホノルル': 'ハワイ',
+    'ワイキキ': 'ハワイ',
+    'オアフ': 'ハワイ',
+    'シドニー': 'オーストラリア',
+    'メルボルン': 'オーストラリア',
+    'ケアンズ': 'オーストラリア',
+    'ホーチミン': 'ベトナム',
+    'ハノイ': 'ベトナム',
+    'ダナン': 'ベトナム',
+    'タモン': 'グアム',
+  };
+  
+  for (const [alias, country] of Object.entries(aliases)) {
+    if (message.includes(alias)) {
+      return country;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * 国の総合情報を取得
+ */
+function getCountryGeneralInfo(country: string, topic: string): string | null {
+  const info = COUNTRY_TRAVEL_INFO[country];
+  if (!info) return null;
+  
+  if (topic.includes('気候') || topic.includes('天気') || topic.includes('季節') || topic.includes('いつ')) {
+    return `🌤️ ${country}の気候・ベストシーズン\n\n${info.climate}`;
+  }
+  if (topic.includes('物価') || topic.includes('お金') || topic.includes('費用') || topic.includes('予算')) {
+    return `💰 ${country}の物価情報\n\n${info.price}`;
+  }
+  if (topic.includes('wifi') || topic.includes('wi-fi') || topic.includes('sim') || topic.includes('ネット') || topic.includes('通信')) {
+    return `📱 ${country}のWi-Fi・通信情報\n\n${info.wifi}`;
+  }
+  if (topic.includes('食べ物') || topic.includes('グルメ') || topic.includes('料理') || topic.includes('食事') || topic.includes('ご飯')) {
+    return `🍽️ ${country}のグルメ情報\n\n${info.food}`;
+  }
+  if (topic.includes('文化') || topic.includes('マナー') || topic.includes('習慣') || topic.includes('ルール')) {
+    return `🙏 ${country}の文化・マナー\n\n${info.culture}`;
+  }
+  if (topic.includes('おすすめ') || topic.includes('コツ') || topic.includes('アドバイス') || topic.includes('ポイント')) {
+    return `💡 ${country}旅行のコツ\n\n${info.tips}`;
+  }
+  
+  return null;
+}
+
 /**
  * 国名から治安情報を取得
  */
@@ -400,47 +855,105 @@ export function isOverseasQuestion(message: string): boolean {
  */
 function searchFAQ(message: string): string | null {
   const lowerMessage = message.toLowerCase();
+  const country = detectCountry(message);
   
-  // 治安・安全に関する質問
-  if (lowerMessage.includes('安全') || lowerMessage.includes('治安')) {
-    const safetyInfo = getCountrySafetyInfo(message);
-    if (safetyInfo) {
-      return safetyInfo;
+  // 国名が含まれている場合、国別の詳細情報を提供
+  if (country) {
+    // 治安・安全に関する質問
+    if (lowerMessage.includes('安全') || lowerMessage.includes('治安') || lowerMessage.includes('危険')) {
+      return getCountrySafetyInfo(message);
     }
-    return `海外の治安についてのご質問ですね。\n\nどの国に行かれる予定ですか？\n\n例：アメリカ、韓国、タイ、フィリピン、台湾、ハワイ、グアム、オーストラリアなど\n\n国名を教えていただければ、詳しい治安情報をお伝えします！`;
+    
+    // 気候・天気に関する質問
+    if (lowerMessage.includes('気候') || lowerMessage.includes('天気') || lowerMessage.includes('季節') || lowerMessage.includes('いつ') || lowerMessage.includes('ベストシーズン')) {
+      const info = getCountryGeneralInfo(country, message);
+      if (info) return info;
+    }
+    
+    // 物価に関する質問
+    if (lowerMessage.includes('物価') || lowerMessage.includes('費用') || lowerMessage.includes('予算') || lowerMessage.includes('いくら')) {
+      const info = getCountryGeneralInfo(country, '物価');
+      if (info) return info;
+    }
+    
+    // Wi-Fi・通信に関する質問
+    if (lowerMessage.includes('wifi') || lowerMessage.includes('wi-fi') || lowerMessage.includes('sim') || lowerMessage.includes('ネット') || lowerMessage.includes('通信')) {
+      const info = getCountryGeneralInfo(country, 'wifi');
+      if (info) return info;
+    }
+    
+    // グルメに関する質問
+    if (lowerMessage.includes('食べ物') || lowerMessage.includes('グルメ') || lowerMessage.includes('料理') || lowerMessage.includes('食事') || lowerMessage.includes('ご飯') || lowerMessage.includes('おいしい') || lowerMessage.includes('名物')) {
+      const info = getCountryGeneralInfo(country, 'グルメ');
+      if (info) return info;
+    }
+    
+    // 文化・マナーに関する質問
+    if (lowerMessage.includes('文化') || lowerMessage.includes('マナー') || lowerMessage.includes('習慣') || lowerMessage.includes('ルール') || lowerMessage.includes('注意')) {
+      const info = getCountryGeneralInfo(country, '文化');
+      if (info) return info;
+    }
+    
+    // おすすめ・コツに関する質問
+    if (lowerMessage.includes('おすすめ') || lowerMessage.includes('コツ') || lowerMessage.includes('アドバイス') || lowerMessage.includes('ポイント') || lowerMessage.includes('教えて')) {
+      const info = getCountryGeneralInfo(country, 'おすすめ');
+      if (info) return info;
+    }
+    
+    // 国名だけの場合は総合情報を返す
+    return getCountryOverview(country);
+  }
+  
+  // 治安・安全に関する質問（国名なし）
+  if (lowerMessage.includes('安全') || lowerMessage.includes('治安')) {
+    return `海外の治安についてのご質問ですね。\n\nどの国に行かれる予定ですか？\n\n【対応国】\n🇺🇸アメリカ 🇰🇷韓国 🇹🇭タイ\n🇵🇭フィリピン 🇹🇼台湾 🌺ハワイ\n🏝️グアム 🇦🇺オーストラリア\n🇻🇳ベトナム 🇸🇬シンガポール\n\n国名を教えてください！詳しい治安情報をお伝えします。`;
   }
   
   // 持ち物に関する質問
   if (lowerMessage.includes('持ち物') || lowerMessage.includes('準備') || lowerMessage.includes('必要なもの')) {
-    return `海外旅行の持ち物ですね！\n\n【必須】\n□ パスポート（有効期限6ヶ月以上）\n□ 航空券/eチケット\n□ 現金・クレカ\n□ 海外旅行保険証\n□ スマホ・充電器\n□ 変換プラグ\n\n【あると便利】\n□ モバイルバッテリー\n□ Wi-Fi/SIM\n□ 常備薬\n□ 衛生用品\n\n行き先によって必要なものが変わります。どちらへ行かれますか？`;
+    return `✈️ 海外旅行の持ち物チェックリスト\n\n【必須アイテム】\n☑ パスポート（有効期限6ヶ月以上確認）\n☑ 航空券/eチケット\n☑ 現金・クレジットカード\n☑ 海外旅行保険証\n☑ スマホ・充電器\n☑ 変換プラグ（国によって形状異なる）\n\n【あると便利】\n☑ モバイルバッテリー\n☑ Wi-Fiルーター/SIM\n☑ 常備薬・酔い止め\n☑ マスク・衛生用品\n☑ ボールペン（入国カード用）\n\n【国別おすすめ】\n・東南アジア → 虫除け、日焼け止め\n・寒い国 → 防寒具\n・イスラム圏 → 肌を隠す服\n\nどちらへ行かれますか？`;
   }
   
   // 両替に関する質問
-  if (lowerMessage.includes('両替') || lowerMessage.includes('お金') || lowerMessage.includes('現金')) {
-    return `両替についてですね！\n\n【お得な順】\n1. 現地ATMで海外キャッシング\n2. 現地の両替所（空港より街中）\n3. 日本の金券ショップ\n4. 日本の空港（レート悪め）\n\n【ポイント】\n・クレカ払いが一番お得なことも\n・現金は最低限に（盗難リスク）\n・複数の支払い手段を用意\n\n他に気になることはありますか？`;
+  if (lowerMessage.includes('両替') || lowerMessage.includes('現金')) {
+    return `💱 海外での両替・お金事情\n\n【お得な順ランキング】\n1️⃣ 現地ATMで海外キャッシング\n2️⃣ 現地の街中の両替所\n3️⃣ 日本の金券ショップ\n4️⃣ 日本の空港（レート悪め）\n5️⃣ 現地空港（便利だが割高）\n\n【ポイント】\n✅ クレカ払いが一番お得なことも\n✅ 現金は最低限に（盗難リスク）\n✅ 複数の支払い手段を用意\n✅ 大きな紙幣は使いにくい\n\n【国別情報】\n・韓国、台湾 → クレカ普及\n・東南アジア → 現金メイン\n・アメリカ → チップ用に$1札を\n\nどちらの国に行かれますか？`;
   }
   
   // Wi-Fi・SIMに関する質問
   if (lowerMessage.includes('wifi') || lowerMessage.includes('wi-fi') || lowerMessage.includes('sim') || lowerMessage.includes('ネット')) {
-    return `海外でのネット環境ですね！\n\n【選択肢】\n1. Wi-Fiレンタル（安心・簡単）\n2. 現地SIM（安い・中級者向け）\n3. eSIM（対応スマホなら便利）\n4. 海外ローミング（割高だが手軽）\n\n【おすすめ】\n・短期旅行 → Wi-Fiレンタル\n・長期滞在 → 現地SIM or eSIM\n・1日500〜1,000円が目安\n\nどのくらいの期間行かれますか？`;
+    return `📱 海外でのネット接続方法\n\n【選択肢と特徴】\n\n1️⃣ Wi-Fiレンタル（初心者向け）\n・1日500〜1,000円\n・複数人でシェア可\n・充電の手間あり\n\n2️⃣ 現地SIM（コスパ最強）\n・東南アジアは激安（数百円〜）\n・空港で購入可能\n・SIMフリースマホ必須\n\n3️⃣ eSIM（便利！）\n・対応スマホならアプリで完結\n・SIM入替不要\n・airalo, Ubigiなどが人気\n\n4️⃣ 海外ローミング（手軽）\n・各キャリアのプラン確認\n・割高だが設定不要\n\nどちらの国に何日行かれますか？`;
   }
   
   // 保険に関する質問
   if (lowerMessage.includes('保険')) {
-    return `海外旅行保険は絶対に入るべきです！\n\n【理由】\n・海外の医療費は超高額（盲腸で200万円以上も）\n・クレカ付帯だけでは補償不足のことも\n・携行品（盗難・紛失）補償も大事\n\n【目安】\n・短期旅行なら1,000〜3,000円程度\n\nUnisiaでは保険のご相談も承っています。お気軽にどうぞ！`;
+    return `🏥 海外旅行保険について\n\n【なぜ必須？】\n・海外の医療費は超高額！\n  └ 盲腸手術: 200〜300万円\n  └ 骨折: 50〜100万円\n  └ 入院1日: 5〜10万円\n\n【補償内容】\n✅ 治療費用（最重要！）\n✅ 救援者費用\n✅ 携行品損害（盗難・紛失）\n✅ 個人賠償責任\n✅ 航空機遅延費用\n\n【加入方法】\n・ネット申込: 500〜3,000円/週\n・空港カウンター: やや割高\n・クレカ付帯: 補償額を要確認\n\n⚠️ クレカ付帯だけでは不十分なことも！\n\nUnisiaでは保険のご相談も承っています！`;
   }
   
   // ビザに関する質問
   if (lowerMessage.includes('ビザ') || lowerMessage.includes('入国')) {
-    return `ビザについてですね。\n\n【日本人が短期観光でビザ不要な国】\n・韓国、台湾、タイ、シンガポール\n・アメリカ（ESTA必要）\n・ヨーロッパ各国\nなど多数\n\n【ビザが必要な場合】\n・長期滞在（留学・ワーホリ）\n・一部の国への観光\n\nどちらの国に行かれますか？詳しくお伝えします！`;
+    return `🛂 ビザ・入国情報\n\n【日本人がビザ不要の国（短期観光）】\n・韓国: 90日（K-ETA必要）\n・台湾: 90日\n・タイ: 30日\n・シンガポール: 30日\n・フィリピン: 30日\n・ベトナム: 15日\n・アメリカ: 90日（ESTA必要）\n・オーストラリア: 90日（ETA必要）\n・ヨーロッパ（シェンゲン）: 90日\n\n【電子渡航認証が必要な国】\n・🇺🇸 ESTA（アメリカ）$21\n・🇰🇷 K-ETA（韓国）₩10,000\n・🇦🇺 ETA（オーストラリア）$20\n\n【ビザが必要な場合】\n・長期滞在（留学・ワーホリ）\n・就労目的\n\nどちらの国に行かれますか？`;
   }
   
   // 時期・季節に関する質問
   if (lowerMessage.includes('いつ') || lowerMessage.includes('時期') || lowerMessage.includes('季節') || lowerMessage.includes('ベストシーズン')) {
-    return `旅行の時期についてですね！\n\n【季節別おすすめ】\n🌸春（3-5月）：台湾、ベトナム\n🌻夏（6-8月）：バリ、ハワイ、北欧\n🍂秋（9-11月）：韓国、オーストラリア\n❄冬（12-2月）：タイ、グアム、オーロラ\n\nどんな旅行をお考えですか？目的に合わせてアドバイスしますね！`;
+    return `📅 季節別おすすめ旅行先\n\n🌸【春（3-5月）】\n・台湾（温暖・雨少ない）\n・ベトナム（乾季）\n・韓国（桜シーズン）\n\n🌻【夏（6-8月）】\n・ハワイ（乾季）\n・オーストラリア（冬だが温暖）\n・ヨーロッパ\n\n🍂【秋（9-11月）】\n・韓国（紅葉）\n・台湾（ベストシーズン）\n・オーストラリア（春）\n\n❄️【冬（12-2月）】\n・タイ（乾季・ベスト）\n・グアム（乾季）\n・フィリピン（乾季）\n・シンガポール（年中OK）\n\nどんな旅行をお考えですか？`;
   }
   
   return null;
+}
+
+/**
+ * 国の総合概要を返す
+ */
+function getCountryOverview(country: string): string {
+  const safety = COUNTRY_SAFETY_INFO[country];
+  const travel = COUNTRY_TRAVEL_INFO[country];
+  
+  if (!safety || !travel) {
+    return `${country}についてですね！\n\n何を知りたいですか？\n・治安/安全\n・気候/ベストシーズン\n・物価/費用\n・Wi-Fi/通信\n・グルメ/食事\n・文化/マナー\n・おすすめ/コツ\n\n例：「${country}の治安は？」「${country}の物価は？」`;
+  }
+  
+  return `📍 ${country}の基本情報\n\n${travel.climate.split('\n').slice(0, 3).join('\n')}\n\n${travel.price.split('\n').slice(0, 4).join('\n')}\n\n【もっと詳しく知りたい方】\n以下のキーワードで質問してください：\n・「${country} 治安」\n・「${country} 気候」\n・「${country} 物価」\n・「${country} グルメ」\n・「${country} Wi-Fi」\n・「${country} 文化」`;
 }
 
 function getDefaultResponse(userMessage: string): string {
