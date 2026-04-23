@@ -77,6 +77,44 @@ export function initDatabase(): void {
       usage_count INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- 会話モード管理テーブル
+    CREATE TABLE IF NOT EXISTS user_conversation_state (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      line_user_id TEXT UNIQUE NOT NULL,
+      current_mode TEXT DEFAULT 'idle',
+      mode_data TEXT,
+      last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_user_state_mode 
+    ON user_conversation_state(current_mode);
+
+    -- 保険相談データテーブル
+    CREATE TABLE IF NOT EXISTS insurance_consultations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      line_user_id TEXT NOT NULL,
+      travel_period TEXT,
+      budget TEXT,
+      destination TEXT,
+      credit_cards TEXT,
+      status TEXT DEFAULT 'collecting',
+      recommendation TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 手動対応キューテーブル
+    CREATE TABLE IF NOT EXISTS manual_support_queue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      line_user_id TEXT NOT NULL,
+      support_type TEXT NOT NULL,
+      initial_message TEXT,
+      status TEXT DEFAULT 'waiting',
+      assigned_to TEXT,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   console.log('✅ Database initialized');
