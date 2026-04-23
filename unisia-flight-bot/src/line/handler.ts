@@ -44,6 +44,20 @@ function getUserState(userId: string): UserState {
 }
 
 /**
+ * 完全な航空券検索リクエストかどうか判定
+ * （エルメのリッチメニューからのフォーム入力）
+ */
+function isCompleteFlightRequest(message: string): boolean {
+  // 「いきたい地域」と「いきたい時期」または「期間」が含まれている場合
+  const hasDestination = message.includes('いきたい地域') || message.includes('行きたい地域');
+  const hasTime = message.includes('いきたい時期') || message.includes('行きたい時期') || message.includes('月');
+  const hasDuration = message.includes('泊') || message.includes('期間') || message.includes('日間') || message.includes('週間');
+  
+  // 目的地 + 時期/期間のどちらかがあれば完全なリクエストとみなす
+  return hasDestination && (hasTime || hasDuration);
+}
+
+/**
  * 航空券検索リクエストかどうか判定
  */
 function isFlightSearchRequest(message: string): boolean {
@@ -84,7 +98,10 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     
     let response: string;
     
-    if (userMessage === 'アンケート' || userMessage === '登録' || (!user.surveyCompleted && state.step === 'idle')) {
+    // エルメからの航空券検索フォーム（全ての条件が揃っている場合）
+    if (isCompleteFlightRequest(userMessage)) {
+      response = await handleFlightQuery(userId, userMessage);
+    } else if (userMessage === 'アンケート' || userMessage === '登録') {
       setUserState(userId, { step: 'survey_region', surveyData: {} });
       response = SURVEY_PROMPTS.welcome;
     } else if (state.step.startsWith('survey_')) {
