@@ -125,11 +125,22 @@ export function detectModeFromKeyword(message: string): ConversationMode | null 
     return 'insurance';
   }
   
-  // 海外LINEサポート
+  // 海外LINEサポート（エルメからの自動送信）
   if (message.includes('海外LINEサポート')) {
     return 'overseas_qa';
   }
   if (message.includes('ご質問をどうぞ') || message.includes('何でもお気軽に')) {
+    return 'overseas_qa';
+  }
+  // エルメからの「質問」関連メッセージ
+  if (message.includes('質問等あれば') || message.includes('ご遠慮なくチャット')) {
+    return 'overseas_qa';
+  }
+  if (message.includes('ご質問ありがとうございます') && message.includes('チャット')) {
+    return 'overseas_qa';
+  }
+  // 「質問」キーワード単体でも検出（他のモードより後に配置）
+  if (message.includes('質問') && !message.includes('保険') && !message.includes('転職') && !message.includes('留学')) {
     return 'overseas_qa';
   }
   

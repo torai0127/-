@@ -87,6 +87,9 @@ const keywords = [
   { text: '最適な保険プランをご提案します', expected: 'insurance' },
   { text: '渡航期間・予算・到着国のテンプレート', expected: 'insurance' },
   { text: '海外LINEサポート', expected: 'overseas_qa' },
+  // エルメからの海外LINEサポート自動送信メッセージ
+  { text: 'ご質問ありがとうございます！何か質問等あればご遠慮なくチャットにてご連絡ください！', expected: 'overseas_qa' },
+  { text: '質問があります', expected: 'overseas_qa' },
   { text: 'オーストラリアの治安は？', expected: null },
 ];
 
