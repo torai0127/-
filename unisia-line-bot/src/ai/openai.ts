@@ -684,6 +684,343 @@ const COUNTRY_TRAVEL_INFO: Record<string, {
   },
 };
 
+// 各国のおすすめ店舗・エリア情報
+const COUNTRY_SHOPS_INFO: Record<string, string> = {
+  '韓国': `🍽️ 韓国のおすすめグルメスポット
+
+【サムギョプサル（焼肉）】
+📍 八色サムギョプサル（팔색삼겹살）
+  └ 明洞・江南に店舗あり
+  └ 8種類の味付け肉が人気
+📍 姜虎東白丁（강호동백정）
+  └ 有名人経営の人気店
+  └ 新村・弘大エリア
+
+【チキン】
+📍 橋村チキン（교촌치킨）
+  └ 韓国チキンチェーン大手
+  └ ハニーコンボが定番
+📍 BHCチキン
+  └ プリンクルチキンが名物
+
+【カフェ】
+📍 CAFE ONION（カフェオニオン）
+  └ 聖水洞の超人気カフェ
+  └ 写真映えスポット
+📍 Blue Bottle Coffee
+  └ 聖水洞・三清洞
+
+【おすすめエリア】
+🗺️ 明洞: 観光・ショッピング
+🗺️ 弘大: 若者・カフェ・ナイトライフ
+🗺️ 聖水洞: おしゃれカフェ
+🗺️ 広蔵市場: ローカルグルメ
+🗺️ 北村韓屋村: 伝統的な街並み`,
+
+  'タイ': `🍽️ タイのおすすめグルメスポット
+
+【パッタイ】
+📍 ティップサマイ（Thip Samai）
+  └ バンコクで最も有名なパッタイ店
+  └ 行列必至！夕方から営業
+📍 Pad Thai Mae Am
+  └ 地元民にも人気
+
+【トムヤムクン】
+📍 バーン・カニタ
+  └ 高級タイ料理店
+  └ 観光客にも安心
+📍 ソンブーン・シーフード
+  └ プーパッポンカリーも有名
+
+【屋台・ナイトマーケット】
+📍 ジョッドフェアーズ（Jodd Fairs）
+  └ 新しくておしゃれ
+📍 タラートロットファイ・ラチャダー
+  └ 写真映えするナイトマーケット
+
+【おすすめエリア】
+🗺️ サイアム: ショッピング
+🗺️ カオサン通り: バックパッカー街
+🗺️ スクンビット: 日本人街もあり
+🗺️ チャトゥチャック: 週末市場`,
+
+  '台湾': `🍽️ 台湾のおすすめグルメスポット
+
+【小籠包】
+📍 鼎泰豐（ディンタイフォン）
+  └ 世界的に有名！台北101店が人気
+  └ 並ぶけど回転は早い
+📍 明月湯包
+  └ 地元民に愛される店
+  └ 鼎泰豐より安くて美味
+
+【魯肉飯】
+📍 金峰魯肉飯
+  └ 中正紀念堂近く
+  └ 地元民御用達の名店
+📍 天天利美食坊
+  └ 西門町エリアで便利
+
+【夜市】
+📍 士林夜市
+  └ 台北最大！観光客向け
+📍 饒河街夜市
+  └ 胡椒餅が有名
+📍 寧夏夜市
+  └ グルメ特化で美味しい店多い
+
+【おすすめエリア】
+🗺️ 西門町: 若者の街・原宿的
+🗺️ 永康街: おしゃれグルメ街
+🗺️ 九份: 千と千尋の世界観
+🗺️ 淡水: 夕日が綺麗な港町`,
+
+  'フィリピン': `🍽️ フィリピンのおすすめスポット
+
+【レストラン】
+📍 Jollibee（ジョリビー）
+  └ フィリピンのファストフード王
+  └ チキンジョイが名物！
+📍 Mang Inasal
+  └ チキンBBQチェーン
+  └ 食べ放題のライスが嬉しい
+📍 Max's Restaurant
+  └ フィリピンチキンの老舗
+
+【シーフード】
+📍 Dampa（ダンパ）
+  └ 市場で魚介を選んで調理
+  └ マカティ、MOA近くにあり
+📍 Isla Sugbu Seafood City（セブ）
+  └ セブでの海鮮ならここ
+
+【カフェ・スイーツ】
+📍 Halo-Halo店
+  └ フィリピンかき氷
+  └ Chowkingが手軽
+📍 Bo's Coffee
+  └ フィリピンのスタバ的存在
+
+【おすすめエリア（セブ）】
+🗺️ ITパーク: 安全・カフェ多い
+🗺️ アヤラモール: ショッピング
+🗺️ マクタン島: リゾート・ビーチ`,
+
+  'ハワイ': `🍽️ ハワイのおすすめグルメスポット
+
+【ロコモコ】
+📍 Rainbow Drive-In
+  └ ローカルに愛される老舗
+  └ カパフル通り
+📍 Loco Moco Drive Inn
+  └ 24時間営業で便利
+
+【ガーリックシュリンプ】
+📍 Giovanni's Shrimp Truck
+  └ ノースショアの名物
+  └ ハレイワエリア
+📍 Romy's Kahuku
+  └ 地元民おすすめ
+
+【パンケーキ】
+📍 Eggs 'n Things
+  └ 日本人に大人気
+  └ ホイップクリームたっぷり
+📍 Bills Hawaii
+  └ リコッタパンケーキ
+
+【ポキ】
+📍 Ono Seafood
+  └ 地元で一番人気のポキ店
+📍 Foodland（スーパー）
+  └ 手軽に美味しいポキ
+
+【おすすめエリア】
+🗺️ ワイキキ: 観光・ビーチ
+🗺️ アラモアナ: ショッピング
+🗺️ カイルア: おしゃれな街
+🗺️ ノースショア: サーフィン・自然`,
+
+  'ベトナム': `🍽️ ベトナムのおすすめグルメスポット
+
+【フォー】
+📍 Pho Thin（ハノイ）
+  └ ハノイNo.1のフォー店
+  └ ローカル感満載
+📍 Pho Hoa Pasteur（ホーチミン）
+  └ 観光客にも入りやすい
+
+【バインミー】
+📍 Banh Mi Phuong（ホイアン）
+  └ 世界一のバインミーと話題
+📍 Banh Mi Huynh Hoa（ホーチミン）
+  └ 行列ができる人気店
+
+【ベトナムコーヒー】
+📍 Cong Caphe
+  └ レトロなチェーン店
+  └ ココナッツコーヒーが人気
+📍 The Coffee House
+  └ モダンなカフェチェーン
+
+【おすすめエリア】
+🗺️ ホーチミン1区: 観光の中心
+🗺️ ハノイ旧市街: 歴史的な街並み
+🗺️ ダナン: ビーチリゾート
+🗺️ ホイアン: ランタンの街`,
+
+  'シンガポール': `🍽️ シンガポールのおすすめグルメスポット
+
+【チキンライス】
+📍 天天海南鶏飯
+  └ マックスウェルフードセンター内
+  └ ミシュランも認めた味
+📍 文東記（Boon Tong Kee）
+  └ チェーン店で入りやすい
+
+【チリクラブ】
+📍 JUMBO Seafood
+  └ チリクラブの超有名店
+  └ 要予約！クラークキー
+📍 Long Beach Seafood
+  └ ブラックペッパークラブも人気
+
+【ホーカー（フードコート）】
+📍 マックスウェルフードセンター
+  └ 観光客にも行きやすい
+📍 ラオパサ（Lau Pa Sat）
+  └ 夜はサテー屋台が出現
+📍 チャイナタウンコンプレックス
+  └ ローカル感たっぷり
+
+【おすすめエリア】
+🗺️ マリーナベイ: 観光の中心
+🗺️ チャイナタウン: グルメ・お土産
+🗺️ リトルインディア: 異国情緒
+🗺️ オーチャード: ショッピング`,
+
+  'オーストラリア': `🍽️ オーストラリアのおすすめスポット
+
+【カフェ（メルボルン）】
+📍 Patricia Coffee Brewers
+  └ メルボルンの名店
+📍 Seven Seeds
+  └ スペシャルティコーヒー
+📍 Hardware Société
+  └ 朝食が絶品
+
+【シドニー】
+📍 The Grounds of Alexandria
+  └ インスタ映えカフェ
+📍 Sydney Fish Market
+  └ 新鮮なシーフード
+📍 Pancakes on the Rocks
+  └ 24時間営業のパンケーキ
+
+【ステーキ】
+📍 Rockpool Bar & Grill
+  └ 高級ステーキハウス
+📍 Hurricane's Grill
+  └ リブが有名
+
+【おすすめエリア】
+🗺️ シドニー: オペラハウス・ハーバー
+🗺️ メルボルン: カフェ文化・アート
+🗺️ ケアンズ: グレートバリアリーフ
+🗺️ ゴールドコースト: ビーチ`,
+
+  'グアム': `🍽️ グアムのおすすめグルメスポット
+
+【チャモロ料理】
+📍 Proa（プロア）
+  └ モダンチャモロ料理
+  └ タモン・タムニンに店舗
+📍 Jeff's Pirates Cove
+  └ 海沿いのローカル店
+  └ BBQリブが人気
+
+【ステーキ】
+📍 Lone Star Steakhouse
+  └ アメリカンステーキ
+📍 Tony Roma's
+  └ リブが有名
+
+【朝食・ブランチ】
+📍 Eggs 'n Things
+  └ ハワイ発パンケーキ店
+📍 IHOP
+  └ アメリカンブレックファスト
+
+【ショッピング】
+📍 Tギャラリア（DFS）
+  └ 免税店・ブランド品
+📍 マイクロネシアモール
+  └ 地元最大のモール
+📍 Kマート
+  └ お土産の穴場！安い
+
+【おすすめエリア】
+🗺️ タモン: ホテル・ビーチ
+🗺️ タムニン: ショッピング
+🗺️ 恋人岬: 絶景スポット`,
+
+  'アメリカ': `🍽️ アメリカのおすすめグルメ（主要都市）
+
+【ニューヨーク】
+📍 Shake Shack
+  └ NYバーガーの代表格
+📍 Katz's Delicatessen
+  └ 映画にも登場した老舗
+📍 Times Square周辺
+  └ 観光向けレストラン多数
+
+【ロサンゼルス】
+📍 In-N-Out Burger
+  └ 西海岸限定！必食
+📍 The Original Farmers Market
+  └ フードマーケット
+📍 サンタモニカピア周辺
+
+【ラスベガス】
+📍 バフェ（食べ放題）
+  └ Wicked Spoon
+  └ Bacchanal Buffet
+📍 ホテル内レストラン
+  └ 有名シェフの店多数
+
+【おすすめエリア】
+🗺️ NY: タイムズスクエア・ブルックリン
+🗺️ LA: サンタモニカ・ハリウッド
+🗺️ SF: フィッシャーマンズワーフ`,
+};
+
+const COUNTRY_ALIASES: Record<string, string> = {
+  '米国': 'アメリカ',
+  'USA': 'アメリカ',
+  'US': 'アメリカ',
+  'セブ': 'フィリピン',
+  'マニラ': 'フィリピン',
+  'ソウル': '韓国',
+  'プサン': '韓国',
+  '釜山': '韓国',
+  'バンコク': 'タイ',
+  'プーケット': 'タイ',
+  'チェンマイ': 'タイ',
+  '台北': '台湾',
+  '高雄': '台湾',
+  'ホノルル': 'ハワイ',
+  'ワイキキ': 'ハワイ',
+  'オアフ': 'ハワイ',
+  'シドニー': 'オーストラリア',
+  'メルボルン': 'オーストラリア',
+  'ケアンズ': 'オーストラリア',
+  'ホーチミン': 'ベトナム',
+  'ハノイ': 'ベトナム',
+  'ダナン': 'ベトナム',
+  'タモン': 'グアム',
+};
+
 /**
  * 国名を特定する
  */
@@ -695,38 +1032,29 @@ function detectCountry(message: string): string | null {
     }
   }
   
-  const aliases: Record<string, string> = {
-    '米国': 'アメリカ',
-    'USA': 'アメリカ',
-    'US': 'アメリカ',
-    'セブ': 'フィリピン',
-    'マニラ': 'フィリピン',
-    'ソウル': '韓国',
-    'プサン': '韓国',
-    '釜山': '韓国',
-    'バンコク': 'タイ',
-    'プーケット': 'タイ',
-    'チェンマイ': 'タイ',
-    '台北': '台湾',
-    '高雄': '台湾',
-    'ホノルル': 'ハワイ',
-    'ワイキキ': 'ハワイ',
-    'オアフ': 'ハワイ',
-    'シドニー': 'オーストラリア',
-    'メルボルン': 'オーストラリア',
-    'ケアンズ': 'オーストラリア',
-    'ホーチミン': 'ベトナム',
-    'ハノイ': 'ベトナム',
-    'ダナン': 'ベトナム',
-    'タモン': 'グアム',
-  };
-  
-  for (const [alias, country] of Object.entries(aliases)) {
+  for (const [alias, country] of Object.entries(COUNTRY_ALIASES)) {
     if (message.includes(alias)) {
       return country;
     }
   }
   
+  return null;
+}
+
+/**
+ * 会話履歴から国名を抽出
+ */
+function detectCountryFromHistory(history: ConversationEntry[]): string | null {
+  // 直近の会話から国名を探す（新しい順）
+  for (let i = history.length - 1; i >= 0; i--) {
+    const entry = history[i];
+    // ユーザーのメッセージから国を探す
+    let country = detectCountry(entry.userMessage);
+    if (country) return country;
+    // ボットの応答から国を探す
+    country = detectCountry(entry.botResponse);
+    if (country) return country;
+  }
   return null;
 }
 
@@ -810,9 +1138,15 @@ export async function generateResponse(
   userMessage: string,
   history: ConversationEntry[]
 ): Promise<string> {
+  // まずFAQから検索（会話履歴も考慮）
+  const faqResponse = searchFAQWithContext(userMessage, history);
+  if (faqResponse) {
+    return faqResponse;
+  }
+  
   // OpenAI未設定時のフォールバック応答
   if (!openai) {
-    return getDefaultResponse(userMessage);
+    return getDefaultResponse(userMessage, history);
   }
 
   const formattedHistory = history.flatMap((entry) => [
@@ -833,13 +1167,13 @@ export async function generateResponse(
     const response = completion.choices[0]?.message?.content;
     
     if (!response) {
-      return getDefaultResponse(userMessage);
+      return getDefaultResponse(userMessage, history);
     }
 
     return response;
   } catch (error) {
     console.error('OpenAI API error:', error);
-    return getDefaultResponse(userMessage);
+    return getDefaultResponse(userMessage, history);
   }
 }
 
@@ -851,17 +1185,61 @@ export function isOverseasQuestion(message: string): boolean {
 }
 
 /**
- * FAQから回答を検索
+ * 会話の文脈を考慮してFAQから回答を検索
  */
-function searchFAQ(message: string): string | null {
+function searchFAQWithContext(message: string, history: ConversationEntry[]): string | null {
   const lowerMessage = message.toLowerCase();
-  const country = detectCountry(message);
+  
+  // まず現在のメッセージから国名を検出
+  let country = detectCountry(message);
+  
+  // 国名がない場合、会話履歴から検出
+  if (!country) {
+    country = detectCountryFromHistory(history);
+  }
+  
+  // 店・場所に関する質問（文脈から国を判断）
+  if (lowerMessage.includes('お店') || lowerMessage.includes('店') || 
+      lowerMessage.includes('どこ') || lowerMessage.includes('場所') ||
+      lowerMessage.includes('おすすめの') || lowerMessage.includes('有名') ||
+      lowerMessage.includes('人気') || lowerMessage.includes('行くべき')) {
+    if (country && COUNTRY_SHOPS_INFO[country]) {
+      return COUNTRY_SHOPS_INFO[country];
+    }
+    // 国が特定できない場合
+    return `おすすめのお店を教えますね！\n\nどの国のお店をお探しですか？\n\n【対応国】\n🇰🇷韓国 🇹🇭タイ 🇹🇼台湾\n🇵🇭フィリピン 🌺ハワイ 🇻🇳ベトナム\n🇸🇬シンガポール 🇦🇺オーストラリア\n🏝️グアム 🇺🇸アメリカ\n\n例：「韓国のお店」「タイのおすすめ店」`;
+  }
+  
+  // もっと教えて、詳しく、他には等の続きの質問
+  if (lowerMessage.includes('もっと') || lowerMessage.includes('詳しく') || 
+      lowerMessage.includes('他に') || lowerMessage.includes('それ以外')) {
+    if (country) {
+      // 直前の会話内容に応じて返す
+      const lastBotResponse = history.length > 0 ? history[history.length - 1].botResponse : '';
+      if (lastBotResponse.includes('グルメ') || lastBotResponse.includes('食べ物')) {
+        return COUNTRY_SHOPS_INFO[country] || `${country}のおすすめ店舗情報をお伝えしますね！\n\n「${country}のお店」と聞いてください！`;
+      }
+      if (lastBotResponse.includes('治安') || lastBotResponse.includes('安全')) {
+        const travelInfo = COUNTRY_TRAVEL_INFO[country];
+        if (travelInfo) {
+          return `${country}のさらに詳しい情報\n\n${travelInfo.tips}\n\n他に知りたいことはありますか？\n・物価\n・Wi-Fi\n・グルメ\n・文化`;
+        }
+      }
+    }
+  }
   
   // 国名が含まれている場合、国別の詳細情報を提供
   if (country) {
     // 治安・安全に関する質問
     if (lowerMessage.includes('安全') || lowerMessage.includes('治安') || lowerMessage.includes('危険')) {
       return getCountrySafetyInfo(message);
+    }
+    
+    // お店・グルメスポットに関する質問
+    if (lowerMessage.includes('お店') || lowerMessage.includes('店') || 
+        lowerMessage.includes('レストラン') || lowerMessage.includes('カフェ') ||
+        lowerMessage.includes('どこで食べ')) {
+      return COUNTRY_SHOPS_INFO[country] || null;
     }
     
     // 気候・天気に関する質問
@@ -896,6 +1274,10 @@ function searchFAQ(message: string): string | null {
     
     // おすすめ・コツに関する質問
     if (lowerMessage.includes('おすすめ') || lowerMessage.includes('コツ') || lowerMessage.includes('アドバイス') || lowerMessage.includes('ポイント') || lowerMessage.includes('教えて')) {
+      // グルメ系のおすすめならお店情報を返す
+      if (lastMentionedTopic(history) === 'food') {
+        return COUNTRY_SHOPS_INFO[country] || getCountryGeneralInfo(country, 'おすすめ');
+      }
       const info = getCountryGeneralInfo(country, 'おすすめ');
       if (info) return info;
     }
@@ -903,6 +1285,34 @@ function searchFAQ(message: string): string | null {
     // 国名だけの場合は総合情報を返す
     return getCountryOverview(country);
   }
+  
+  // 国名がない一般的な質問
+  return searchGeneralFAQ(message);
+}
+
+/**
+ * 直前の会話のトピックを判定
+ */
+function lastMentionedTopic(history: ConversationEntry[]): string | null {
+  if (history.length === 0) return null;
+  const lastResponse = history[history.length - 1].botResponse.toLowerCase();
+  if (lastResponse.includes('グルメ') || lastResponse.includes('食べ物') || lastResponse.includes('料理')) {
+    return 'food';
+  }
+  if (lastResponse.includes('治安') || lastResponse.includes('安全')) {
+    return 'safety';
+  }
+  if (lastResponse.includes('気候') || lastResponse.includes('天気')) {
+    return 'climate';
+  }
+  return null;
+}
+
+/**
+ * 一般的なFAQから回答を検索（国名なし）
+ */
+function searchGeneralFAQ(message: string): string | null {
+  const lowerMessage = message.toLowerCase();
   
   // 治安・安全に関する質問（国名なし）
   if (lowerMessage.includes('安全') || lowerMessage.includes('治安')) {
@@ -956,15 +1366,20 @@ function getCountryOverview(country: string): string {
   return `📍 ${country}の基本情報\n\n${travel.climate.split('\n').slice(0, 3).join('\n')}\n\n${travel.price.split('\n').slice(0, 4).join('\n')}\n\n【もっと詳しく知りたい方】\n以下のキーワードで質問してください：\n・「${country} 治安」\n・「${country} 気候」\n・「${country} 物価」\n・「${country} グルメ」\n・「${country} Wi-Fi」\n・「${country} 文化」`;
 }
 
-function getDefaultResponse(userMessage: string): string {
-  // まずFAQから検索
-  const faqResponse = searchFAQ(userMessage);
-  if (faqResponse) {
-    return faqResponse;
-  }
-  
+function getDefaultResponse(userMessage: string, history: ConversationEntry[] = []): string {
   // キーワードベースのシンプルな応答
   const lowerMessage = userMessage.toLowerCase();
+  
+  // 会話履歴から国を検出
+  const country = detectCountry(userMessage) || detectCountryFromHistory(history);
+  
+  // お店を聞かれた場合
+  if (lowerMessage.includes('お店') || lowerMessage.includes('店') || 
+      lowerMessage.includes('どこ') || lowerMessage.includes('場所')) {
+    if (country && COUNTRY_SHOPS_INFO[country]) {
+      return COUNTRY_SHOPS_INFO[country];
+    }
+  }
   
   if (lowerMessage.includes('留学')) {
     return `留学についてのご質問ですね！\n\n【Unisiaの留学サポート】\n・フィリピン・サイパン中心\n・大手より65%以上コスト削減\n・24時間LINEサポート\n\n期間や予算、目的を教えていただければ、具体的にご案内できます！`;
