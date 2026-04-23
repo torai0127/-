@@ -90,30 +90,46 @@ export function resetUserState(lineUserId: string): void {
 
 /**
  * リッチメニューのキーワードからモードを検出
+ * ※テンプレート入力（ユーザーの回答）は検出しない
  */
 export function detectModeFromKeyword(message: string): ConversationMode | null {
-  // 緊急対応サポート
-  if (message.includes('緊急対応サポート') || message.includes('いかがなさいましたでしょうか')) {
+  // 緊急対応サポート（エルメからの自動送信メッセージ）
+  if (message.includes('緊急対応サポート') && message.includes('優先的にサポート')) {
+    return 'emergency';
+  }
+  if (message.includes('いかがなさいましたでしょうか') && message.includes('緊急')) {
     return 'emergency';
   }
   
-  // 海外留学相談会
-  if (message.includes('lin.ee/ZgWRQ6U') || message.includes('海外留学の無料相談')) {
+  // 海外留学相談会（エルメからの自動送信メッセージ）
+  if (message.includes('lin.ee/ZgWRQ6U')) {
+    return 'study_abroad';
+  }
+  if (message.includes('海外留学の無料相談') && message.includes('公式LINE')) {
     return 'study_abroad';
   }
   
-  // 帰国後転職サポート
-  if (message.includes('帰国後転職サポート')) {
+  // 帰国後転職サポート（エルメからの自動送信メッセージ）
+  if (message.includes('帰国後転職サポート') && message.includes('最適な転職先')) {
     return 'job_change';
   }
   
-  // 海外保険案内サポート
-  if (message.includes('海外保険の無料相談') || message.includes('渡航期間') && message.includes('予算') && message.includes('到着国')) {
+  // 海外保険案内サポート（エルメからの自動送信メッセージ）
+  // ※「▶︎」が含まれていたらテンプレート入力なので検出しない
+  if (message.includes('海外保険の無料相談') && !message.includes('▶')) {
+    return 'insurance';
+  }
+  // テンプレートの表示（エルメからの自動送信）
+  if (message.includes('渡航期間') && message.includes('予算') && message.includes('到着国') && message.includes('テンプレート')) {
     return 'insurance';
   }
   
   // 海外LINEサポート（質問）
-  if (message.includes('質問') || message.includes('海外LINEサポート')) {
+  if (message.includes('海外LINEサポート')) {
+    return 'overseas_qa';
+  }
+  // 「質問」だけだと誤検出するので、より具体的な条件に
+  if (message.includes('ご質問をどうぞ') || message.includes('何でもお気軽に')) {
     return 'overseas_qa';
   }
   

@@ -178,34 +178,63 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
   try {
     // 現在のユーザー状態を取得
     let state = getUserState(userId);
+    const currentMode = state?.currentMode || 'idle';
     
     // リッチメニューのキーワードを検出
     const newMode = detectModeFromKeyword(userMessage);
     
-    // 新しいモードが検出された場合、モードを切り替え
+    // 新しいモードが検出された場合の処理
     if (newMode) {
-      console.log(`🔄 Mode switch: ${state?.currentMode || 'none'} -> ${newMode}`);
-      setUserState(userId, newMode);
-      
-      // 初期メッセージを返す
-      const initialMessage = getRichMenuInitialMessage(newMode);
-      
-      // 会話を保存
-      saveConversation({
-        lineUserId: userId,
-        userMessage,
-        botResponse: initialMessage,
-        timestamp: new Date().toISOString(),
-      });
-      
-      if (lineClient) {
-        await lineClient.replyMessage({
-          replyToken: messageEvent.replyToken,
-          messages: [{ type: 'text', text: initialMessage }],
+      // 既に同じモードの場合は、初期メッセージではなく通常の応答を返す
+      // （テンプレート入力などにキーワードが含まれている場合の対策）
+      if (currentMode === newMode) {
+        console.log(`📝 Already in ${newMode} mode, processing as normal message`);
+        // 保険モードの場合はテンプレート解析を試みる
+        if (newMode === 'insurance') {
+          const response = handleInsuranceMessage(userId, userMessage, state?.modeData);
+          
+          saveConversation({
+            lineUserId: userId,
+            userMessage,
+            botResponse: response,
+            timestamp: new Date().toISOString(),
+          });
+          
+          if (lineClient) {
+            await lineClient.replyMessage({
+              replyToken: messageEvent.replyToken,
+              messages: [{ type: 'text', text: response }],
+            });
+            console.log(`📤 Insurance response: ${response.substring(0, 50)}...`);
+          }
+          return;
+        }
+        // 他のモードも同様に通常処理へ
+      } else {
+        // 異なるモードへの切り替え
+        console.log(`🔄 Mode switch: ${currentMode} -> ${newMode}`);
+        setUserState(userId, newMode);
+        
+        // 初期メッセージを返す
+        const initialMessage = getRichMenuInitialMessage(newMode);
+        
+        // 会話を保存
+        saveConversation({
+          lineUserId: userId,
+          userMessage,
+          botResponse: initialMessage,
+          timestamp: new Date().toISOString(),
         });
-        console.log(`📤 Initial message for mode ${newMode}`);
+        
+        if (lineClient) {
+          await lineClient.replyMessage({
+            replyToken: messageEvent.replyToken,
+            messages: [{ type: 'text', text: initialMessage }],
+          });
+          console.log(`📤 Initial message for mode ${newMode}`);
+        }
+        return;
       }
-      return;
     }
     
     // タイムアウトチェック（10分以上経過していたらリセット）
@@ -216,11 +245,11 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     }
     
     // 状態がない場合はデフォルトで海外Q&Aモード
-    const currentMode = state?.currentMode || 'overseas_qa';
+    const activeMode = state?.currentMode || 'overseas_qa';
     const modeData = state?.modeData;
     
     // モードに応じた応答を生成
-    const response = await handleModeResponse(userId, userMessage, currentMode, modeData);
+    const response = await handleModeResponse(userId, userMessage, activeMode, modeData);
     
     // 会話を保存
     saveConversation({
@@ -232,7 +261,7 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
 
     // 手動対応が必要な場合、質問をデータベースに保存
     if (needsManualResponse(response) || 
-        (currentMode === 'overseas_qa' && !isOverseasQuestion(userMessage))) {
+        (activeMode === 'overseas_qa' && !isOverseasQuestion(userMessage))) {
       const category = categorizeQuestion(userMessage);
       saveUnansweredQuestion({
         lineUserId: userId,
@@ -247,7 +276,7 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
         replyToken: messageEvent.replyToken,
         messages: [{ type: 'text', text: response }],
       });
-      console.log(`📤 Replied (${currentMode}): ${response.substring(0, 50)}...`);
+      console.log(`📤 Replied (${activeMode}): ${response.substring(0, 50)}...`);
     } else {
       console.log(`📤 [Test Mode] Would reply: ${response.substring(0, 50)}...`);
     }
