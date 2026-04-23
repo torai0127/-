@@ -58,6 +58,83 @@ function isCompleteFlightRequest(message: string): boolean {
 }
 
 /**
+ * テキストから直接航空券パラメータを抽出
+ */
+function extractFlightParamsFromText(message: string): any {
+  const result: any = {};
+  
+  // 目的地を抽出（いきたい地域: ○○ or 行きたい地域: ○○）
+  const destMatch = message.match(/(?:いきたい地域|行きたい地域)[:\s：]*([^\n,、]+)/i);
+  if (destMatch) {
+    result.destination = destMatch[1].trim();
+  }
+  
+  // 出発空港を抽出
+  const airportMatch = message.match(/(?:空港|出発)[:\s：]*([^\n,、]+)/i);
+  if (airportMatch) {
+    result.origin = airportMatch[1].trim().replace('空港', '');
+  }
+  
+  // 時期を抽出
+  const timeMatch = message.match(/(?:いきたい時期|行きたい時期|出発時期)[:\s：]*([^\n,、]+)/i);
+  if (timeMatch) {
+    const timeStr = timeMatch[1].trim();
+    result.isFlexibleDate = true;
+    
+    // 月を抽出
+    const monthMatch = timeStr.match(/(\d+)月/);
+    if (monthMatch) {
+      const month = parseInt(monthMatch[1]);
+      const year = new Date().getFullYear();
+      const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
+      
+      result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
+      result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-28`;
+    }
+  }
+  
+  // 期間を抽出（5泊6日など）
+  const durationMatch = message.match(/(\d+)泊(\d+)?日?/);
+  if (durationMatch) {
+    result.stayDuration = parseInt(durationMatch[2] || durationMatch[1]) + (durationMatch[2] ? 0 : 1);
+  }
+  
+  // 週間を抽出
+  const weekMatch = message.match(/(\d+)週間/);
+  if (weekMatch) {
+    result.stayDuration = parseInt(weekMatch[1]) * 7;
+  }
+  
+  // 人数を抽出
+  const peopleMatch = message.match(/(?:人数|合計人数)[:\s：]*(\d+)人?/i);
+  if (peopleMatch) {
+    result.adults = parseInt(peopleMatch[1]);
+  }
+  
+  // 大人と子供を抽出
+  const adultMatch = message.match(/大人\s*(\d+)/);
+  const childMatch = message.match(/子供\s*(\d+)/);
+  if (adultMatch) {
+    result.adults = parseInt(adultMatch[1]);
+  }
+  if (childMatch) {
+    result.children = parseInt(childMatch[1]);
+  }
+  
+  // 「妻・子供」「家族」などのパターン
+  if (message.includes('妻') || message.includes('夫') || message.includes('配偶者')) {
+    if (!result.adults || result.adults < 2) {
+      result.adults = 2;
+    }
+  }
+  if ((message.includes('子供') || message.includes('こども')) && !result.children) {
+    result.children = 1;
+  }
+  
+  return result;
+}
+
+/**
  * 航空券検索リクエストかどうか判定
  */
 function isFlightSearchRequest(message: string): boolean {
@@ -256,7 +333,20 @@ async function handleSafetyQuery(message: string): Promise<string> {
 }
 
 async function handleFlightQuery(userId: string, message: string): Promise<string> {
-  const params = await extractFlightParams(message);
+  // まず直接テキストから情報を抽出を試みる
+  const directParams = extractFlightParamsFromText(message);
+  
+  // OpenAIでも抽出を試みる
+  const aiParams = await extractFlightParams(message);
+  
+  // 両方をマージ（directParamsを優先）
+  const params = {
+    ...aiParams,
+    ...directParams,
+    destination: directParams.destination || aiParams?.destination,
+    origin: directParams.origin || aiParams?.origin,
+  };
+  
   const surveyData = getSurveyResponse(userId);
   
   // 目的地が特定できない場合
