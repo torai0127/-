@@ -74,6 +74,13 @@ export const ROUTE_RULES: RouteRule[] = [
   { type: 'keyword', pattern: '治安', target: 'flight', description: '治安情報' },
   { type: 'keyword', pattern: 'アンケート', target: 'flight', description: 'アンケート' },
   
+  // エルメのリッチメニューからの航空券検索フォーム
+  { type: 'keyword', pattern: 'いきたい地域', target: 'flight', description: '航空券検索フォーム' },
+  { type: 'keyword', pattern: 'いきたい時期', target: 'flight', description: '航空券検索フォーム' },
+  { type: 'keyword', pattern: '期間行きたい', target: 'flight', description: '航空券検索フォーム' },
+  { type: 'keyword', pattern: '泊', target: 'flight', description: '航空券検索（宿泊）' },
+  { type: 'keyword', pattern: '行きたい', target: 'flight', description: '航空券検索' },
+  
   // 相談ボットへ（その他5つのサポート関連）
   { type: 'keyword', pattern: '留学', target: 'consultation', description: '留学相談' },
   { type: 'keyword', pattern: 'ワーホリ', target: 'consultation', description: 'ワーホリ相談' },
