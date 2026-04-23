@@ -379,95 +379,76 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   const infantsOnLap = params.infantsOnLap || 0;
   const totalPassengers = adults + children;
   
-  // 日付情報がない場合は、曖昧な検索として処理
-  if (!params.departureDate && !params.departureDateStart) {
-    // 滞在期間のみ指定されている場合、直近3ヶ月で検索
-    const today = new Date();
-    const threeMonthsLater = new Date(today);
-    threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
-    
-    const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
-    const flexibleParams = {
-      origin,
-      destination: params.destination,
-      departureDateStart: today.toISOString().split('T')[0],
-      departureDateEnd: threeMonthsLater.toISOString().split('T')[0],
-      stayDuration: params.stayDuration || 7,
-      adults,
-      children,
-      infantsOnLap,
-      tripType,
-      cabinClass: 'economy' as const,
-    };
-    
-    const searchUrl = generateFlexibleDateSearchUrl(flexibleParams);
-    
-    let response = `✈️ 航空券検索結果\n\n`;
-    response += `📍 ${origin} → ${params.destination}\n`;
-    response += `👥 ${totalPassengers}名`;
-    if (children > 0) response += `（大人${adults}、子供${children}）`;
-    response += `\n`;
-    if (params.stayDuration) response += `📅 ${params.stayDuration}日間\n`;
-    response += `\n🔗 最安値を探す\n${searchUrl}\n\n`;
-    response += `💡 出発時期を教えていただければ、より正確な検索ができます！`;
-    
-    return response;
-  }
+  // 日付情報がない場合や曖昧な日付の場合、tfs=パラメータで直接検索結果を表示
+  const stayDuration = params.stayDuration || 7;
+  let departureDate: string;
+  let returnDate: string;
   
-  // 曖昧な日付指定の場合（「5月」「5月末」など）
-  if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
-    const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
-    const flexibleParams = {
-      origin,
-      destination: params.destination,
-      departureDateStart: params.departureDateStart,
-      departureDateEnd: params.departureDateEnd,
-      stayDuration: params.stayDuration || 7,
-      adults,
-      children,
-      infantsOnLap,
-      tripType,
-      cabinClass: 'economy' as const,
-    };
-    
-    const searchUrl = generateFlexibleDateSearchUrl(flexibleParams);
-    const description = formatFlexibleDateDescription(flexibleParams);
-    
-    let response = `✈️ 航空券検索条件（最安値を探す）\n\n${description}\n\n`;
-    response += `🔗 この期間の最安値を見る\n${searchUrl}\n\n`;
-    response += `💡 日付グリッドで最安値の日程が一目でわかります！\n`;
-    response += `火・水曜出発が比較的安いことも多いです。`;
-    
-    return response;
-  }
-  
-  // 具体的な日付指定の場合
   if (params.departureDate) {
-    const tripType: 'round_trip' | 'one_way' = params.tripType || (params.returnDate ? 'round_trip' : 'one_way');
-    const searchParams = {
-      origin,
-      destination: params.destination,
-      departureDate: params.departureDate,
-      returnDate: params.returnDate,
-      adults,
-      children,
-      infantsOnLap,
-      tripType,
-      cabinClass: 'economy' as const,
-    };
+    // 具体的な日付がある場合
+    departureDate = params.departureDate;
+    if (params.returnDate) {
+      returnDate = params.returnDate;
+    } else {
+      const depDate = new Date(departureDate);
+      depDate.setDate(depDate.getDate() + stayDuration - 1);
+      returnDate = depDate.toISOString().split('T')[0];
+    }
+  } else if (params.departureDateStart) {
+    // 曖昧な日付の場合、期間の中央あたりを選択
+    const startDate = new Date(params.departureDateStart);
+    const endDate = params.departureDateEnd ? new Date(params.departureDateEnd) : new Date(startDate);
+    endDate.setDate(endDate.getDate() + 14); // デフォルトで2週間後
     
-    const entryUrl = generateGoogleFlightsPrePurchaseEntryUrl(searchParams);
-    const description = formatSearchDescription(searchParams);
-
-    let response = `✈️ 航空券検索条件\n\n${description}\n\n`;
-    response += `🔗 Google Flights で検索結果を見る\n${entryUrl}\n\n`;
-    response += `💡 火・水曜出発が比較的安いことも多いです。`;
+    // 期間の中央を出発日とする
+    const midDate = new Date((startDate.getTime() + endDate.getTime()) / 2);
+    departureDate = midDate.toISOString().split('T')[0];
     
-    return response;
+    const retDate = new Date(midDate);
+    retDate.setDate(retDate.getDate() + stayDuration - 1);
+    returnDate = retDate.toISOString().split('T')[0];
+  } else {
+    // 日付情報がない場合、1ヶ月後を出発日とする
+    const today = new Date();
+    today.setMonth(today.getMonth() + 1);
+    departureDate = today.toISOString().split('T')[0];
+    
+    const retDate = new Date(today);
+    retDate.setDate(retDate.getDate() + stayDuration - 1);
+    returnDate = retDate.toISOString().split('T')[0];
   }
   
-  const history = getConversationHistory(userId, 5);
-  return await generateFlightResponse(message, history, { surveyData });
+  // 計算した日付を使用してリンクを生成
+  const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
+  const searchParams = {
+    origin,
+    destination: params.destination,
+    departureDate,
+    returnDate,
+    adults,
+    children,
+    infantsOnLap,
+    tripType,
+    cabinClass: 'economy' as const,
+  };
+  
+  const entryUrl = generateGoogleFlightsPrePurchaseEntryUrl(searchParams);
+  
+  // 日付をフォーマット
+  const depDateObj = new Date(departureDate);
+  const retDateObj = new Date(returnDate);
+  const formatDate = (d: Date) => `${d.getMonth() + 1}月${d.getDate()}日`;
+  
+  let response = `✈️ 航空券検索結果\n\n`;
+  response += `📍 ${origin} → ${params.destination}\n`;
+  response += `📅 ${formatDate(depDateObj)} 〜 ${formatDate(retDateObj)}（${stayDuration}日間）\n`;
+  response += `👥 ${totalPassengers}名`;
+  if (children > 0) response += `（大人${adults}、子供${children}）`;
+  response += `\n\n`;
+  response += `🔗 Google Flightsで検索\n${entryUrl}\n\n`;
+  response += `💡 日付は変更可能です。火・水曜出発が比較的安いことも多いです。`;
+  
+  return response;
 }
 
 async function handleGeneralQuery(userId: string, message: string): Promise<string> {
