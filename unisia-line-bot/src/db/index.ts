@@ -54,6 +54,29 @@ export function initDatabase(): void {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(date)
     );
+
+    CREATE TABLE IF NOT EXISTS unanswered_questions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      line_user_id TEXT NOT NULL,
+      question TEXT NOT NULL,
+      category TEXT,
+      status TEXT DEFAULT 'pending',
+      manual_response TEXT,
+      responded_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_unanswered_status 
+    ON unanswered_questions(status);
+
+    CREATE TABLE IF NOT EXISTS question_patterns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pattern TEXT NOT NULL,
+      category TEXT,
+      auto_response TEXT,
+      usage_count INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   console.log('✅ Database initialized');
