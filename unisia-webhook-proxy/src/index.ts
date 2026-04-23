@@ -81,6 +81,7 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
     events: [event],
   };
   
+  // 1. ボットへの転送（航空券 or 相談）
   switch (routingResult.target) {
     case 'consultation': {
       const result = await forwardToConsultationBot(singleEventBody, LINE_CHANNEL_SECRET);
@@ -97,21 +98,29 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
     }
     
     case 'ma': {
-      const maConfig = getMAConfig();
-      if (maConfig) {
-        const result = await forwardToMA(singleEventBody, maConfig);
-        success = result.success;
-        responseTimeMs = result.responseTimeMs;
-      } else {
-        console.warn('⚠️ MA tool not configured');
-      }
+      // MAのみの場合は後で処理
+      success = true;
       break;
     }
     
     case 'self': {
-      // 自己処理（現在は何もしない）
       success = true;
       break;
+    }
+  }
+  
+  // 2. エルメにも常に転送（顧客管理・リッチメニュー・ステップ配信のため）
+  const elmeUrl = process.env.ELME_WEBHOOK_URL;
+  if (elmeUrl) {
+    try {
+      const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
+      if (elmeResult.success) {
+        console.log(`✅ Also forwarded to Elme (${elmeResult.responseTimeMs}ms)`);
+      } else {
+        console.warn(`⚠️ Failed to forward to Elme: ${elmeResult.error}`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Elme forward error:', error);
     }
   }
   
