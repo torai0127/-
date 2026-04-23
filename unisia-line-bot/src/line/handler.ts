@@ -9,6 +9,7 @@ import {
   resetUserState,
   isConversationTimedOut,
   detectModeFromKeyword,
+  isInsuranceTemplateInput,
   addToManualQueue,
   ConversationMode,
 } from '../db/conversation-state.js';
@@ -178,47 +179,77 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
   try {
     // 現在のユーザー状態を取得
     let state = getUserState(userId);
-    const currentMode = state?.currentMode || 'idle';
+    let currentMode = state?.currentMode || 'idle';
+    
+    // タイムアウトチェック（10分以上経過していたらリセット）
+    if (state && isConversationTimedOut(state)) {
+      console.log(`⏰ Conversation timed out for ${userId}, resetting to idle`);
+      resetUserState(userId);
+      state = null;
+      currentMode = 'idle';
+    }
+    
+    // ★ 保険テンプレート入力を最優先で検出
+    if (isInsuranceTemplateInput(userMessage)) {
+      console.log(`🛡️ Insurance template input detected`);
+      
+      // 保険モードに設定
+      setUserState(userId, 'insurance', { step: 'waiting_template' });
+      
+      // テンプレートを処理
+      const response = handleInsuranceMessage(userId, userMessage, { step: 'waiting_template' });
+      
+      saveConversation({
+        lineUserId: userId,
+        userMessage,
+        botResponse: response,
+        timestamp: new Date().toISOString(),
+      });
+      
+      if (lineClient) {
+        await lineClient.replyMessage({
+          replyToken: messageEvent.replyToken,
+          messages: [{ type: 'text', text: response }],
+        });
+        console.log(`📤 Insurance template response: ${response.substring(0, 50)}...`);
+      }
+      return;
+    }
     
     // リッチメニューのキーワードを検出
     const newMode = detectModeFromKeyword(userMessage);
     
     // 新しいモードが検出された場合の処理
     if (newMode) {
-      // 既に同じモードの場合は、初期メッセージではなく通常の応答を返す
-      // （テンプレート入力などにキーワードが含まれている場合の対策）
-      if (currentMode === newMode) {
-        console.log(`📝 Already in ${newMode} mode, processing as normal message`);
-        // 保険モードの場合はテンプレート解析を試みる
-        if (newMode === 'insurance') {
-          const response = handleInsuranceMessage(userId, userMessage, state?.modeData);
-          
-          saveConversation({
-            lineUserId: userId,
-            userMessage,
-            botResponse: response,
-            timestamp: new Date().toISOString(),
+      // 同じモードでも、保険モードの場合は継続処理
+      if (currentMode === 'insurance' && newMode === 'insurance') {
+        console.log(`📝 Continuing insurance mode`);
+        const response = handleInsuranceMessage(userId, userMessage, state?.modeData);
+        
+        saveConversation({
+          lineUserId: userId,
+          userMessage,
+          botResponse: response,
+          timestamp: new Date().toISOString(),
+        });
+        
+        if (lineClient) {
+          await lineClient.replyMessage({
+            replyToken: messageEvent.replyToken,
+            messages: [{ type: 'text', text: response }],
           });
-          
-          if (lineClient) {
-            await lineClient.replyMessage({
-              replyToken: messageEvent.replyToken,
-              messages: [{ type: 'text', text: response }],
-            });
-            console.log(`📤 Insurance response: ${response.substring(0, 50)}...`);
-          }
-          return;
         }
-        // 他のモードも同様に通常処理へ
-      } else {
-        // 異なるモードへの切り替え
+        return;
+      }
+      
+      // 異なるモードへの切り替え、または新規モード開始
+      if (currentMode !== newMode || currentMode === 'idle') {
         console.log(`🔄 Mode switch: ${currentMode} -> ${newMode}`);
         setUserState(userId, newMode);
         
         // 初期メッセージを返す
         const initialMessage = getRichMenuInitialMessage(newMode);
         
-        // 会話を保存
         saveConversation({
           lineUserId: userId,
           userMessage,
@@ -237,15 +268,8 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       }
     }
     
-    // タイムアウトチェック（10分以上経過していたらリセット）
-    if (state && isConversationTimedOut(state)) {
-      console.log(`⏰ Conversation timed out for ${userId}, resetting to idle`);
-      resetUserState(userId);
-      state = null;
-    }
-    
-    // 状態がない場合はデフォルトで海外Q&Aモード
-    const activeMode = state?.currentMode || 'overseas_qa';
+    // 現在のモードに応じて処理（保険モード中の継続処理も含む）
+    const activeMode = currentMode === 'idle' ? 'overseas_qa' : currentMode;
     const modeData = state?.modeData;
     
     // モードに応じた応答を生成

@@ -90,50 +90,64 @@ export function resetUserState(lineUserId: string): void {
 
 /**
  * リッチメニューのキーワードからモードを検出
- * ※テンプレート入力（ユーザーの回答）は検出しない
  */
 export function detectModeFromKeyword(message: string): ConversationMode | null {
-  // 緊急対応サポート（エルメからの自動送信メッセージ）
-  if (message.includes('緊急対応サポート') && message.includes('優先的にサポート')) {
+  // 緊急対応サポート
+  if (message.includes('緊急対応サポート') || message.includes('緊急') && message.includes('サポート')) {
     return 'emergency';
   }
-  if (message.includes('いかがなさいましたでしょうか') && message.includes('緊急')) {
+  if (message.includes('いかがなさいましたでしょうか')) {
     return 'emergency';
   }
   
-  // 海外留学相談会（エルメからの自動送信メッセージ）
+  // 海外留学相談会
   if (message.includes('lin.ee/ZgWRQ6U')) {
     return 'study_abroad';
   }
-  if (message.includes('海外留学の無料相談') && message.includes('公式LINE')) {
+  if (message.includes('海外留学') && (message.includes('相談') || message.includes('無料'))) {
     return 'study_abroad';
   }
   
-  // 帰国後転職サポート（エルメからの自動送信メッセージ）
-  if (message.includes('帰国後転職サポート') && message.includes('最適な転職先')) {
+  // 帰国後転職サポート
+  if (message.includes('帰国後転職') || (message.includes('転職') && message.includes('サポート'))) {
     return 'job_change';
   }
   
-  // 海外保険案内サポート（エルメからの自動送信メッセージ）
-  // ※「▶︎」が含まれていたらテンプレート入力なので検出しない
-  if (message.includes('海外保険の無料相談') && !message.includes('▶')) {
+  // 海外保険案内サポート - エルメからのテンプレート表示
+  if (message.includes('海外保険') && message.includes('相談')) {
     return 'insurance';
   }
-  // テンプレートの表示（エルメからの自動送信）
-  if (message.includes('渡航期間') && message.includes('予算') && message.includes('到着国') && message.includes('テンプレート')) {
+  if (message.includes('保険プラン') && message.includes('提案')) {
+    return 'insurance';
+  }
+  // テンプレート形式を検出（エルメからの自動送信）
+  if (message.includes('渡航期間') && message.includes('予算') && message.includes('到着国')) {
     return 'insurance';
   }
   
-  // 海外LINEサポート（質問）
+  // 海外LINEサポート
   if (message.includes('海外LINEサポート')) {
     return 'overseas_qa';
   }
-  // 「質問」だけだと誤検出するので、より具体的な条件に
   if (message.includes('ご質問をどうぞ') || message.includes('何でもお気軽に')) {
     return 'overseas_qa';
   }
   
   return null;
+}
+
+/**
+ * 保険テンプレート入力かどうかを判定
+ */
+export function isInsuranceTemplateInput(message: string): boolean {
+  // ユーザーが記入したテンプレート入力を検出
+  // 「▶」の後に実際の値が入っている場合
+  const hasFilledPeriod = /渡航期間[\s\S]*?▶[^\n]*\S+/.test(message) || /▶[^\n]*(?:週間|ヶ月|か月|年|日)/.test(message);
+  const hasFilledBudget = /予算[\s\S]*?▶[^\n]*\S+/.test(message) || /▶[^\n]*(?:円|無料)/.test(message);
+  const hasFilledCountry = /到着国[\s\S]*?▶[^\n]*\S+/.test(message);
+  
+  // 3つの項目すべてに値が入っている
+  return hasFilledPeriod && hasFilledBudget && hasFilledCountry;
 }
 
 /**

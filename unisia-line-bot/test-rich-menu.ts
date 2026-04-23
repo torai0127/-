@@ -9,6 +9,7 @@ import {
   resetUserState,
   isConversationTimedOut,
   detectModeFromKeyword,
+  isInsuranceTemplateInput,
 } from './src/db/conversation-state.js';
 import {
   getInsuranceWelcomeMessage,
@@ -29,19 +30,64 @@ console.log('========================================\n');
 const testUserId = 'test_user_001';
 
 // ========================================
+// 0. 保険テンプレート入力検出テスト（最重要）
+// ========================================
+console.log('📌 0. 保険テンプレート入力検出テスト\n');
+
+const templateInputs = [
+  {
+    name: 'ユーザーのテンプレート入力（実際の形式）',
+    text: `・渡航期間
+▶6ヶ月
+
+・予算（0円もOK）
+▶0円
+
+・到着国
+▶オーストラリア`,
+    expected: true,
+  },
+  {
+    name: 'エルメからの空テンプレート（未入力）',
+    text: `・渡航期間
+▶
+
+・予算（0円もOK）
+▶
+
+・到着国
+▶`,
+    expected: false,
+  },
+  {
+    name: '普通のメッセージ',
+    text: 'オーストラリアの治安は？',
+    expected: false,
+  },
+];
+
+for (const t of templateInputs) {
+  const result = isInsuranceTemplateInput(t.text);
+  const status = result === t.expected ? '✅' : '❌';
+  console.log(`${status} ${t.name}: ${result} (expected: ${t.expected})`);
+}
+
+// ========================================
 // 1. キーワード検出テスト
 // ========================================
-console.log('📌 1. キーワード検出テスト\n');
+console.log('\n📌 1. キーワード検出テスト\n');
 
 const keywords = [
   { text: '緊急対応サポート', expected: 'emergency' },
   { text: 'いかがなさいましたでしょうか？', expected: 'emergency' },
   { text: 'https://lin.ee/ZgWRQ6U', expected: 'study_abroad' },
-  { text: '海外留学の無料相談', expected: 'study_abroad' },
+  { text: '海外留学の無料相談をご希望ですね', expected: 'study_abroad' },
   { text: '帰国後転職サポート', expected: 'job_change' },
   { text: '海外保険の無料相談', expected: 'insurance' },
-  { text: '質問があります', expected: 'overseas_qa' },
-  { text: '普通のメッセージ', expected: null },
+  { text: '最適な保険プランをご提案します', expected: 'insurance' },
+  { text: '渡航期間・予算・到着国のテンプレート', expected: 'insurance' },
+  { text: '海外LINEサポート', expected: 'overseas_qa' },
+  { text: 'オーストラリアの治安は？', expected: null },
 ];
 
 for (const kw of keywords) {
