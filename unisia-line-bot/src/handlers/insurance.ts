@@ -118,31 +118,75 @@ export function getInsuranceWelcomeMessage(): string {
 export function parseInsuranceTemplate(message: string): InsuranceData | null {
   const data: InsuranceData = { step: 'waiting_template' };
   
-  // 渡航期間を抽出
-  const periodMatch = message.match(/渡航期間[：:\s▶︎]*([^\n・]+)/i) || 
-                      message.match(/(\d+(?:週間|ヶ月|か月|ヵ月|年|日))/);
-  if (periodMatch) {
-    data.travelPeriod = periodMatch[1].trim();
+  // 行ごとに分割して解析
+  const lines = message.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const nextLine = lines[i + 1]?.trim() || '';
+    
+    // 渡航期間
+    if (line.includes('渡航期間')) {
+      // 次の行に値がある場合
+      if (nextLine.startsWith('▶') || nextLine.startsWith('▶︎')) {
+        const value = nextLine.replace(/^[▶︎▶]+\s*/, '').trim();
+        if (value && !value.includes('例')) {
+          data.travelPeriod = value;
+        }
+      }
+    }
+    
+    // 予算
+    if (line.includes('予算')) {
+      if (nextLine.startsWith('▶') || nextLine.startsWith('▶︎')) {
+        const value = nextLine.replace(/^[▶︎▶]+\s*/, '').trim();
+        if (value && !value.includes('例')) {
+          data.budget = value;
+        }
+      }
+    }
+    
+    // 到着国
+    if (line.includes('到着国')) {
+      if (nextLine.startsWith('▶') || nextLine.startsWith('▶︎')) {
+        const value = nextLine.replace(/^[▶︎▶]+\s*/, '').trim();
+        if (value && !value.includes('例')) {
+          data.destination = value;
+        }
+      }
+    }
   }
   
-  // 予算を抽出
-  const budgetMatch = message.match(/予算[：:\s▶︎]*([^\n・]+)/i) ||
-                      message.match(/(0円|無料|\d+[,，]?\d*円)/);
-  if (budgetMatch) {
-    data.budget = budgetMatch[1].trim();
+  // 自然文からも抽出を試みる
+  if (!data.travelPeriod) {
+    const periodMatch = message.match(/(\d+(?:週間|ヶ月|か月|ヵ月|年|日間?))/);
+    if (periodMatch) {
+      data.travelPeriod = periodMatch[1];
+    }
   }
   
-  // 到着国を抽出
-  const destMatch = message.match(/到着国[：:\s▶︎]*([^\n・]+)/i) ||
-                    message.match(/(?:行き先|目的地)[：:\s]*([^\n・]+)/i);
-  if (destMatch) {
-    data.destination = destMatch[1].trim();
+  if (!data.budget) {
+    const budgetMatch = message.match(/(?:予算|費用)[はが]?\s*(0円|無料|\d+[,，]?\d*円)/i) ||
+                        message.match(/(0円|無料|\d+[,，]?\d*円)/);
+    if (budgetMatch) {
+      data.budget = budgetMatch[1];
+    }
+  }
+  
+  if (!data.destination) {
+    const countries = ['フィリピン', 'アメリカ', '韓国', 'タイ', '台湾', 'ハワイ', 'グアム', 'オーストラリア', 'ベトナム', 'シンガポール', 'カナダ', 'イギリス', 'フランス', 'ドイツ', 'イタリア', 'スペイン'];
+    for (const country of countries) {
+      if (message.includes(country)) {
+        data.destination = country;
+        break;
+      }
+    }
   }
   
   // 必要な情報が揃っているかチェック
   if (data.travelPeriod && data.budget && data.destination) {
     // 予算が0円の場合はクレカ確認ステップへ
-    if (data.budget.includes('0') || data.budget.includes('無料')) {
+    if (data.budget === '0円' || data.budget === '0' || data.budget.includes('無料')) {
       data.step = 'asking_cards';
     } else {
       data.step = 'recommendation';
