@@ -332,7 +332,8 @@ const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'
 
 /** Google Place ID (都市用) - tfs エンコードに使用 */
 const GOOGLE_PLACE_IDS: Record<string, string> = {
-  // 日本
+  // 主要空港のみPlace IDを使用（マイナー空港は空港コードを直接使用）
+  // 日本（主要空港のみ）
   TYO: '/m/07dfk',  // 東京（都市コード）
   NRT: '/m/07dfk',
   HND: '/m/07dfk',
@@ -343,16 +344,8 @@ const GOOGLE_PLACE_IDS: Record<string, string> = {
   NGO: '/m/0hrpk',  // 名古屋
   CTS: '/m/01_d4',  // 札幌
   OKA: '/m/0k3ll',  // 沖縄/那覇
-  SDJ: '/m/01frwp', // 仙台
-  HIJ: '/m/0g7zq',  // 広島
-  KMJ: '/m/025s5y', // 熊本
-  NGS: '/m/01cs2j', // 長崎
-  KOJ: '/m/02526t', // 鹿児島
-  MYJ: '/m/01fhg3', // 松山
-  TAK: '/m/026s8j', // 高松
-  KMI: '/m/02j3w1', // 宮崎
-  ISG: '/m/03bx5h', // 石垣
-  MMY: '/m/03ckxz', // 宮古
+  // 以下の地方空港はPlace IDを使用せず、空港コードを直接使用
+  // KMJ, NGS, KOJ, MYJ, TAK, KMI, ISG, MMY, SDJ, HIJ など
   
   // 韓国
   ICN: '/m/0hsqf',  // ソウル/仁川
