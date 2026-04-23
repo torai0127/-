@@ -19,6 +19,27 @@ import {
   generateCreditCardInsuranceRecommendation,
 } from './src/handlers/insurance.js';
 
+// handler.tsから持ってきた自動切替テスト用関数
+const OVERSEAS_QUESTION_KEYWORDS = [
+  '気温', '天気', '気候', '季節',
+  '治安', '安全', '危険',
+  '物価', '費用', '相場', '予算',
+  'おすすめ', 'オススメ', 'お店', 'レストラン', '観光', 'スポット',
+  'Wi-Fi', 'wifi', 'SIM', 'ネット',
+  '文化', 'マナー', '言語', '言葉',
+  '食事', 'グルメ', '料理', '食べ物',
+  'ビザ', '入国', 'パスポート',
+  '持ち物', '準備', '服装',
+];
+const INSURANCE_KEYWORDS = [
+  '保険', 'クレカ', 'クレジットカード', 'カード',
+  '渡航期間', '予算', '到着国', '補償', '治療費',
+];
+function isGeneralOverseasQuestion(message: string): boolean {
+  if (INSURANCE_KEYWORDS.some(kw => message.includes(kw))) return false;
+  return OVERSEAS_QUESTION_KEYWORDS.some(kw => message.toLowerCase().includes(kw.toLowerCase()));
+}
+
 // DB初期化
 initDatabase();
 
@@ -253,6 +274,32 @@ const step2Input = `・渡航期間
 console.log(`👤 ユーザー: (テンプレート入力)\n`);
 response = handleInsuranceMessage(testUserId, step2Input, { step: 'waiting_template' });
 console.log(`🤖 ボット: ${response.substring(0, 300)}...\n`);
+
+// ========================================
+// 5. 保険モードからの自動切替テスト
+// ========================================
+console.log('📌 5. 保険モードからの自動切替テスト\n');
+
+const autoSwitchTests = [
+  { text: '今のグアテマラの気温は？', expected: true, reason: '気温' },
+  { text: 'タイの治安はどうですか？', expected: true, reason: '治安' },
+  { text: '韓国のおすすめのお店を教えて', expected: true, reason: 'おすすめ/お店' },
+  { text: 'ベトナムの物価は？', expected: true, reason: '物価' },
+  { text: 'フィリピンでのWi-Fi事情は？', expected: true, reason: 'Wi-Fi' },
+  { text: '保険の補償内容を教えて', expected: false, reason: '保険キーワード' },
+  { text: 'クレカの付帯保険について', expected: false, reason: 'クレカキーワード' },
+  { text: '治療費の上限は？', expected: false, reason: '治療費キーワード' },
+  { text: 'ありがとうございます', expected: false, reason: '一般メッセージ' },
+];
+
+let autoSwitchSuccess = 0;
+for (const test of autoSwitchTests) {
+  const result = isGeneralOverseasQuestion(test.text);
+  const ok = result === test.expected;
+  if (ok) autoSwitchSuccess++;
+  console.log(`${ok ? '✅' : '❌'} "${test.text.substring(0, 25)}..." → ${result ? 'overseas_qa' : 'insurance継続'} (${test.reason})`);
+}
+console.log(`\n✅ ${autoSwitchSuccess}/${autoSwitchTests.length} 成功\n`);
 
 // ========================================
 // 完了

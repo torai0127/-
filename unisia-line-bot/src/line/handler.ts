@@ -30,6 +30,37 @@ function needsManualResponse(response: string): boolean {
   return MANUAL_RESPONSE_INDICATORS.some(indicator => response.includes(indicator));
 }
 
+// 一般的な海外質問のキーワード（保険モードからの自動切替用）
+const OVERSEAS_QUESTION_KEYWORDS = [
+  '気温', '天気', '気候', '季節',
+  '治安', '安全', '危険',
+  '物価', '費用', '相場', '予算',
+  'おすすめ', 'オススメ', 'お店', 'レストラン', '観光', 'スポット',
+  'Wi-Fi', 'wifi', 'SIM', 'ネット',
+  '文化', 'マナー', '言語', '言葉',
+  '食事', 'グルメ', '料理', '食べ物',
+  'ビザ', '入国', 'パスポート',
+  '持ち物', '準備', '服装',
+];
+
+// 保険に関連するキーワード
+const INSURANCE_KEYWORDS = [
+  '保険', 'クレカ', 'クレジットカード', 'カード',
+  '渡航期間', '予算', '到着国', '補償', '治療費',
+];
+
+/**
+ * 保険モード中に一般的な海外質問かどうかを判定
+ */
+function isGeneralOverseasQuestion(message: string): boolean {
+  // 保険関連キーワードが含まれていたら保険の質問
+  if (INSURANCE_KEYWORDS.some(kw => message.includes(kw))) {
+    return false;
+  }
+  // 一般的な海外質問キーワードが含まれていたら海外質問
+  return OVERSEAS_QUESTION_KEYWORDS.some(kw => message.toLowerCase().includes(kw.toLowerCase()));
+}
+
 /**
  * リッチメニューの初期メッセージを返す
  */
@@ -266,6 +297,13 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
         }
         return;
       }
+    }
+    
+    // ★ 保険モード中に一般的な海外質問が来た場合、overseas_qaに自動切替
+    if (currentMode === 'insurance' && isGeneralOverseasQuestion(userMessage)) {
+      console.log(`🔄 Auto-switch from insurance to overseas_qa: "${userMessage.substring(0, 30)}..."`);
+      setUserState(userId, 'overseas_qa');
+      currentMode = 'overseas_qa';
     }
     
     // 現在のモードに応じて処理（保険モード中の継続処理も含む）
