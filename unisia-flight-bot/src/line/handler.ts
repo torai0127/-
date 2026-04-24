@@ -79,17 +79,30 @@ function extractFlightParamsFromText(message: string): any {
   const timeMatch = message.match(/(?:いきたい時期|行きたい時期|出発時期)[:\s：]*([^\n,、]+)/i);
   if (timeMatch) {
     const timeStr = timeMatch[1].trim();
-    result.isFlexibleDate = true;
     
-    // 月を抽出
-    const monthMatch = timeStr.match(/(\d+)月/);
-    if (monthMatch) {
-      const month = parseInt(monthMatch[1]);
+    // 具体的な日付（○月○日）を抽出
+    const fullDateMatch = timeStr.match(/(\d+)月\s*(\d+)日?/);
+    if (fullDateMatch) {
+      const month = parseInt(fullDateMatch[1]);
+      const day = parseInt(fullDateMatch[2]);
       const year = new Date().getFullYear();
       const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
       
-      result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
-      result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-28`;
+      // 具体的な日付がある場合は、その日付を出発日として設定
+      result.departureDate = `${adjustedYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      result.isFlexibleDate = false;
+    } else {
+      // 月だけの場合は柔軟な日付として処理
+      const monthMatch = timeStr.match(/(\d+)月/);
+      if (monthMatch) {
+        const month = parseInt(monthMatch[1]);
+        const year = new Date().getFullYear();
+        const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
+        
+        result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
+        result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-28`;
+        result.isFlexibleDate = true;
+      }
     }
   }
   
@@ -397,8 +410,13 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   } else if (params.departureDateStart) {
     // 曖昧な日付の場合、期間の中央あたりを選択
     const startDate = new Date(params.departureDateStart);
-    const endDate = params.departureDateEnd ? new Date(params.departureDateEnd) : new Date(startDate);
-    endDate.setDate(endDate.getDate() + 14); // デフォルトで2週間後
+    let endDate: Date;
+    if (params.departureDateEnd) {
+      endDate = new Date(params.departureDateEnd);
+    } else {
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 14); // デフォルトで2週間後
+    }
     
     // 期間の中央を出発日とする
     const midDate = new Date((startDate.getTime() + endDate.getTime()) / 2);
