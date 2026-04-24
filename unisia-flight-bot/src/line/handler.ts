@@ -3,9 +3,6 @@ import { lineClient } from './client.js';
 import { generateFlightResponse, extractFlightParams } from '../ai/openai.js';
 import { 
   generateGoogleFlightsPrePurchaseEntryUrl, 
-  formatSearchDescription,
-  generateFlexibleDateSearchUrl,
-  formatFlexibleDateDescription,
 } from '../flight/google-flights.js';
 import { getSafetyInfo, formatSafetyInfo } from '../external/mofa-safety.js';
 import { getOrCreateUser, saveSurveyResponse, getSurveyResponse } from '../db/users.js';
@@ -436,14 +433,25 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     stayDuration = params.stayDuration || 7;
   }
   
-  // 抽象的な日付（「5月」「5月末」など）の場合は、日付グリッドで最安値を探せるURLを生成
+  // 抽象的な日付（「5月」「5月末」など）の場合は、期間の中央を出発日として検索結果を表示
   if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
-    const flexSearchParams = {
+    const startDateObj = new Date(params.departureDateStart);
+    const endDateObj = new Date(params.departureDateEnd);
+    
+    // 期間の中央を出発日とする
+    const midDate = new Date((startDateObj.getTime() + endDateObj.getTime()) / 2);
+    const departureDate = midDate.toISOString().split('T')[0];
+    
+    // 帰国日を計算
+    const retDate = new Date(midDate);
+    retDate.setDate(retDate.getDate() + stayDuration - 1);
+    const returnDate = retDate.toISOString().split('T')[0];
+    
+    const searchParams = {
       origin,
       destination: params.destination,
-      departureDateStart: params.departureDateStart,
-      departureDateEnd: params.departureDateEnd,
-      stayDuration,
+      departureDate,
+      returnDate,
       adults,
       children,
       infantsOnLap,
@@ -451,23 +459,22 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
       cabinClass: 'economy' as const,
     };
     
-    const flexUrl = generateFlexibleDateSearchUrl(flexSearchParams);
+    const entryUrl = generateGoogleFlightsPrePurchaseEntryUrl(searchParams);
     
-    // 日付範囲をフォーマット
-    const startDateObj = new Date(params.departureDateStart);
-    const endDateObj = new Date(params.departureDateEnd);
     const formatDateShort = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
     const monthLabel = `${startDateObj.getMonth() + 1}月${params.dateRangeLabel || ''}`;
+    const depDateObj = new Date(departureDate);
+    const retDateObj = new Date(returnDate);
     
     let response = `✈️ 航空券検索結果\n\n`;
     response += `📍 ${origin} → ${params.destination}\n`;
     response += `📅 ${monthLabel}（${formatDateShort(startDateObj)} 〜 ${formatDateShort(endDateObj)}）\n`;
-    response += `🗓️ 滞在: ${stayDuration}日間\n`;
+    response += `📅 参考日程: ${formatDateShort(depDateObj)} 〜 ${formatDateShort(retDateObj)}（${stayDuration}日間）\n`;
     response += `👥 ${totalPassengers}名`;
     if (children > 0) response += `（大人${adults}、子供${children}）`;
     response += `\n\n`;
-    response += `🔗 Google Flightsで検索\n${flexUrl}\n\n`;
-    response += `💡 リンク先で日付グリッドが表示され、期間内の最安値を探せます。\n`;
+    response += `🔗 Google Flightsで検索\n${entryUrl}\n\n`;
+    response += `💡 リンク先で日付を変更して、最安値を探せます。\n`;
     response += `💡 火・水曜出発が比較的安いことも多いです。`;
     
     return response;
