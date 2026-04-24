@@ -81,7 +81,7 @@ function extractFlightParamsFromText(message: string): any {
     const timeStr = timeMatch[1].trim();
     
     // 具体的な日付（○月○日）を抽出
-    const fullDateMatch = timeStr.match(/(\d+)月\s*(\d+)日?/);
+    const fullDateMatch = timeStr.match(/(\d+)月\s*(\d+)日/);
     if (fullDateMatch) {
       const month = parseInt(fullDateMatch[1]);
       const day = parseInt(fullDateMatch[2]);
@@ -92,15 +92,33 @@ function extractFlightParamsFromText(message: string): any {
       result.departureDate = `${adjustedYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
       result.isFlexibleDate = false;
     } else {
-      // 月だけの場合は柔軟な日付として処理
+      // 月を抽出
       const monthMatch = timeStr.match(/(\d+)月/);
       if (monthMatch) {
         const month = parseInt(monthMatch[1]);
         const year = new Date().getFullYear();
         const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
+        const lastDay = new Date(adjustedYear, month, 0).getDate(); // 月の最終日
         
-        result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
-        result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-28`;
+        // 「上旬」「中旬」「下旬」「末」「頭」などのパターン
+        if (timeStr.includes('上旬') || timeStr.includes('頭') || timeStr.includes('初め') || timeStr.includes('初旬')) {
+          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
+          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-10`;
+          result.dateRangeLabel = '上旬';
+        } else if (timeStr.includes('中旬') || timeStr.includes('半ば')) {
+          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-11`;
+          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-20`;
+          result.dateRangeLabel = '中旬';
+        } else if (timeStr.includes('下旬') || timeStr.includes('末') || timeStr.includes('終わり')) {
+          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-21`;
+          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
+          result.dateRangeLabel = '下旬';
+        } else {
+          // 月全体
+          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
+          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
+          result.dateRangeLabel = '';
+        }
         result.isFlexibleDate = true;
       }
     }
@@ -391,9 +409,47 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   const children = params.children || 0;
   const infantsOnLap = params.infantsOnLap || 0;
   const totalPassengers = adults + children;
-  
-  // 日付情報がない場合や曖昧な日付の場合、tfs=パラメータで直接検索結果を表示
   const stayDuration = params.stayDuration || 7;
+  const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
+  
+  // 抽象的な日付（「5月」「5月末」など）の場合は、日付グリッドで最安値を探せるURLを生成
+  if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
+    const flexSearchParams = {
+      origin,
+      destination: params.destination,
+      departureDateStart: params.departureDateStart,
+      departureDateEnd: params.departureDateEnd,
+      stayDuration,
+      adults,
+      children,
+      infantsOnLap,
+      tripType,
+      cabinClass: 'economy' as const,
+    };
+    
+    const flexUrl = generateFlexibleDateSearchUrl(flexSearchParams);
+    
+    // 日付範囲をフォーマット
+    const startDateObj = new Date(params.departureDateStart);
+    const endDateObj = new Date(params.departureDateEnd);
+    const formatDateShort = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+    const monthLabel = `${startDateObj.getMonth() + 1}月${params.dateRangeLabel || ''}`;
+    
+    let response = `✈️ 航空券検索結果\n\n`;
+    response += `📍 ${origin} → ${params.destination}\n`;
+    response += `📅 ${monthLabel}（${formatDateShort(startDateObj)} 〜 ${formatDateShort(endDateObj)}）\n`;
+    response += `🗓️ 滞在: ${stayDuration}日間\n`;
+    response += `👥 ${totalPassengers}名`;
+    if (children > 0) response += `（大人${adults}、子供${children}）`;
+    response += `\n\n`;
+    response += `🔗 Google Flightsで検索\n${flexUrl}\n\n`;
+    response += `💡 リンク先で日付グリッドが表示され、期間内の最安値を探せます。\n`;
+    response += `💡 火・水曜出発が比較的安いことも多いです。`;
+    
+    return response;
+  }
+  
+  // 具体的な日付がある場合、または日付情報がない場合
   let departureDate: string;
   let returnDate: string;
   
@@ -407,24 +463,6 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
       depDate.setDate(depDate.getDate() + stayDuration - 1);
       returnDate = depDate.toISOString().split('T')[0];
     }
-  } else if (params.departureDateStart) {
-    // 曖昧な日付の場合、期間の中央あたりを選択
-    const startDate = new Date(params.departureDateStart);
-    let endDate: Date;
-    if (params.departureDateEnd) {
-      endDate = new Date(params.departureDateEnd);
-    } else {
-      endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 14); // デフォルトで2週間後
-    }
-    
-    // 期間の中央を出発日とする
-    const midDate = new Date((startDate.getTime() + endDate.getTime()) / 2);
-    departureDate = midDate.toISOString().split('T')[0];
-    
-    const retDate = new Date(midDate);
-    retDate.setDate(retDate.getDate() + stayDuration - 1);
-    returnDate = retDate.toISOString().split('T')[0];
   } else {
     // 日付情報がない場合、1ヶ月後を出発日とする
     const today = new Date();
@@ -437,7 +475,6 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   }
   
   // 計算した日付を使用してリンクを生成
-  const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
   const searchParams = {
     origin,
     destination: params.destination,
