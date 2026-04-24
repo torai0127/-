@@ -2,7 +2,7 @@ import { WebhookEvent, MessageEvent, TextMessage } from '@line/bot-sdk';
 import { lineClient } from './client.js';
 import { generateFlightResponse, extractFlightParams } from '../ai/openai.js';
 import { 
-  generateGoogleFlightsPrePurchaseEntryUrl, 
+  generateGoogleFlightsQueryUrl, 
 } from '../flight/google-flights.js';
 import { getSafetyInfo, formatSafetyInfo } from '../external/mofa-safety.js';
 import { getOrCreateUser, saveSurveyResponse, getSurveyResponse } from '../db/users.js';
@@ -459,7 +459,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
       cabinClass: 'economy' as const,
     };
     
-    const entryUrl = generateGoogleFlightsPrePurchaseEntryUrl(searchParams);
+    const entryUrl = generateGoogleFlightsQueryUrl(searchParams);
     
     const formatDateShort = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
     const monthLabel = `${startDateObj.getMonth() + 1}月${params.dateRangeLabel || ''}`;
@@ -518,7 +518,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     cabinClass: 'economy' as const,
   };
   
-  const entryUrl = generateGoogleFlightsPrePurchaseEntryUrl(searchParams);
+  const entryUrl = generateGoogleFlightsQueryUrl(searchParams);
   
   // 日付をフォーマット
   const depDateObj = new Date(departureDate);
