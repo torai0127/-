@@ -79,47 +79,62 @@ function extractFlightParamsFromText(message: string): any {
   const timeMatch = message.match(/(?:いきたい時期|行きたい時期|出発時期)[:\s：]*([^\n,、]+)/i);
   if (timeMatch) {
     const timeStr = timeMatch[1].trim();
+    const year = new Date().getFullYear();
     
-    // 具体的な日付（○月○日）を抽出
-    const fullDateMatch = timeStr.match(/(\d+)月\s*(\d+)日/);
-    if (fullDateMatch) {
-      const month = parseInt(fullDateMatch[1]);
-      const day = parseInt(fullDateMatch[2]);
-      const year = new Date().getFullYear();
-      const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
+    // パターン1: 具体的な日付範囲（○月○日〜○日、○月○〜○、○月○日〜○月○日）
+    // 例: 「5月24〜25」「5月24日〜25日」「5月24〜25日」「5月24日〜6月1日」
+    const dateRangeMatch = timeStr.match(/(\d+)月\s*(\d+)日?\s*[〜~ー－\-]+\s*(?:(\d+)月\s*)?(\d+)日?/);
+    if (dateRangeMatch) {
+      const startMonth = parseInt(dateRangeMatch[1]);
+      const startDay = parseInt(dateRangeMatch[2]);
+      const endMonth = dateRangeMatch[3] ? parseInt(dateRangeMatch[3]) : startMonth;
+      const endDay = parseInt(dateRangeMatch[4]);
       
-      // 具体的な日付がある場合は、その日付を出発日として設定
-      result.departureDate = `${adjustedYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const startAdjustedYear = startMonth < new Date().getMonth() + 1 ? year + 1 : year;
+      const endAdjustedYear = endMonth < startMonth ? startAdjustedYear + 1 : startAdjustedYear;
+      
+      result.departureDate = `${startAdjustedYear}-${startMonth.toString().padStart(2, '0')}-${startDay.toString().padStart(2, '0')}`;
+      result.returnDate = `${endAdjustedYear}-${endMonth.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}`;
       result.isFlexibleDate = false;
-    } else {
-      // 月を抽出
-      const monthMatch = timeStr.match(/(\d+)月/);
-      if (monthMatch) {
-        const month = parseInt(monthMatch[1]);
-        const year = new Date().getFullYear();
+    }
+    // パターン2: 具体的な出発日のみ（○月○日）
+    else {
+      const fullDateMatch = timeStr.match(/(\d+)月\s*(\d+)日/);
+      if (fullDateMatch) {
+        const month = parseInt(fullDateMatch[1]);
+        const day = parseInt(fullDateMatch[2]);
         const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
-        const lastDay = new Date(adjustedYear, month, 0).getDate(); // 月の最終日
         
-        // 「上旬」「中旬」「下旬」「末」「頭」などのパターン
-        if (timeStr.includes('上旬') || timeStr.includes('頭') || timeStr.includes('初め') || timeStr.includes('初旬')) {
-          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
-          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-10`;
-          result.dateRangeLabel = '上旬';
-        } else if (timeStr.includes('中旬') || timeStr.includes('半ば')) {
-          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-11`;
-          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-20`;
-          result.dateRangeLabel = '中旬';
-        } else if (timeStr.includes('下旬') || timeStr.includes('末') || timeStr.includes('終わり')) {
-          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-21`;
-          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
-          result.dateRangeLabel = '下旬';
-        } else {
-          // 月全体
-          result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
-          result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
-          result.dateRangeLabel = '';
+        result.departureDate = `${adjustedYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        result.isFlexibleDate = false;
+      }
+      // パターン3: 抽象的な期間（○月、○月上旬、○月末など）
+      else {
+        const monthMatch = timeStr.match(/(\d+)月/);
+        if (monthMatch) {
+          const month = parseInt(monthMatch[1]);
+          const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
+          const lastDay = new Date(adjustedYear, month, 0).getDate();
+          
+          if (timeStr.includes('上旬') || timeStr.includes('頭') || timeStr.includes('初め') || timeStr.includes('初旬')) {
+            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
+            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-10`;
+            result.dateRangeLabel = '上旬';
+          } else if (timeStr.includes('中旬') || timeStr.includes('半ば')) {
+            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-11`;
+            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-20`;
+            result.dateRangeLabel = '中旬';
+          } else if (timeStr.includes('下旬') || timeStr.includes('末') || timeStr.includes('終わり')) {
+            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-21`;
+            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
+            result.dateRangeLabel = '下旬';
+          } else {
+            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
+            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
+            result.dateRangeLabel = '';
+          }
+          result.isFlexibleDate = true;
         }
-        result.isFlexibleDate = true;
       }
     }
   }
@@ -409,8 +424,17 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   const children = params.children || 0;
   const infantsOnLap = params.infantsOnLap || 0;
   const totalPassengers = adults + children;
-  const stayDuration = params.stayDuration || 7;
   const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
+  
+  // 滞在日数を計算（returnDateがある場合はそこから計算）
+  let stayDuration: number;
+  if (params.returnDate && params.departureDate) {
+    const dep = new Date(params.departureDate);
+    const ret = new Date(params.returnDate);
+    stayDuration = Math.ceil((ret.getTime() - dep.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  } else {
+    stayDuration = params.stayDuration || 7;
+  }
   
   // 抽象的な日付（「5月」「5月末」など）の場合は、日付グリッドで最安値を探せるURLを生成
   if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
