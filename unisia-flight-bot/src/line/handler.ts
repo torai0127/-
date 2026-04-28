@@ -15,6 +15,12 @@ import {
   PURPOSE_MAP, 
   GOALS_MAP 
 } from '../ai/prompts.js';
+import { 
+  compareFlightPrices, 
+  formatComparisonResultForLine,
+  formatSimpleResultForLine,
+} from '../flight/price-comparator.js';
+import { isSkyscannerApiAvailable } from '../flight/skyscanner-api.js';
 
 interface UserState {
   step: 'idle' | 'survey_region' | 'survey_airport' | 'survey_period' | 'survey_budget' | 'survey_purpose' | 'survey_goals' | 'flight_search';
@@ -195,7 +201,92 @@ function setUserState(userId: string, state: UserState): void {
   userStates.set(userId, state);
 }
 
+/**
+ * 航空券検索の入力テンプレートを表示するキーワード
+ */
+function isFlightTemplateRequest(message: string): boolean {
+  const templateKeywords = [
+    '航空券',
+    '航空券検索',
+    'フライト検索',
+    '飛行機',
+    '飛行機検索',
+  ];
+  
+  // 完全一致または末尾一致（「航空券を探して」などは除く）
+  return templateKeywords.some(keyword => 
+    message === keyword || 
+    message === keyword + '検索' ||
+    message === keyword + 'を検索'
+  );
+}
+
+/**
+ * 航空券検索の入力テンプレートを生成
+ */
+function getFlightSearchTemplate(): string {
+  return `✈️ 航空券検索
+
+下のテンプレートをコピーして、
+必要な情報を入力してください👇
+
+━━━━━━━━━━━━━━━
+
+いきたい地域: 
+いきたい時期: 
+期間: 
+人数: 
+出発空港: 
+
+━━━━━━━━━━━━━━━
+
+【入力例】
+
+いきたい地域: フィリピン
+いきたい時期: 6月15日〜20日
+期間: 5泊6日
+人数: 2人（大人2）
+出発空港: 福岡
+
+━━━━━━━━━━━━━━━
+
+💡 入力のコツ
+・地域は国名or都市名でOK
+・時期は「5月」「GW」など曖昧でもOK
+・人数は「大人2、子供1」のように詳しく書くと正確です`;
+}
+
 export async function handleEvent(event: WebhookEvent): Promise<void> {
+  // Postbackイベントの処理（リッチメニュータップ時）
+  if (event.type === 'postback') {
+    const postbackEvent = event as any;
+    const userId = postbackEvent.source.userId;
+    const data = postbackEvent.postback?.data || '';
+    
+    if (!userId || !lineClient) {
+      console.warn('No userId or lineClient for postback');
+      return;
+    }
+    
+    console.log(`📩 Postback received from ${userId}: ${data}`);
+    
+    let response: string;
+    
+    // 航空券検索のpostback
+    if (data === 'action=flight_search' || data.includes('flight')) {
+      response = getFlightSearchTemplate();
+    } else {
+      response = 'メニューを選択してください。';
+    }
+    
+    await lineClient.replyMessage({
+      replyToken: postbackEvent.replyToken,
+      messages: [{ type: 'text', text: response }],
+    });
+    
+    return;
+  }
+  
   if (event.type !== 'message' || event.message.type !== 'text') {
     return;
   }
@@ -218,8 +309,12 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     
     let response: string;
     
+    // リッチメニューから「航空券」とだけ送られた場合 → テンプレート表示
+    if (isFlightTemplateRequest(userMessage)) {
+      response = getFlightSearchTemplate();
+    }
     // エルメからの航空券検索フォーム（全ての条件が揃っている場合）
-    if (isCompleteFlightRequest(userMessage)) {
+    else if (isCompleteFlightRequest(userMessage)) {
       response = await handleFlightQuery(userId, userMessage);
     } else if (userMessage === 'アンケート' || userMessage === '登録') {
       setUserState(userId, { step: 'survey_region', surveyData: {} });
@@ -420,7 +515,6 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   const adults = params.adults || params.passengers || 1;
   const children = params.children || 0;
   const infantsOnLap = params.infantsOnLap || 0;
-  const totalPassengers = adults + children;
   const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
   
   // 滞在日数を計算（returnDateがある場合はそこから計算）
@@ -433,59 +527,21 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     stayDuration = params.stayDuration || 7;
   }
   
-  // 抽象的な日付（「5月」「5月末」など）の場合は、期間の中央を出発日として検索結果を表示
-  if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
-    const startDateObj = new Date(params.departureDateStart);
-    const endDateObj = new Date(params.departureDateEnd);
-    
-    // 期間の中央を出発日とする
-    const midDate = new Date((startDateObj.getTime() + endDateObj.getTime()) / 2);
-    const departureDate = midDate.toISOString().split('T')[0];
-    
-    // 帰国日を計算
-    const retDate = new Date(midDate);
-    retDate.setDate(retDate.getDate() + stayDuration - 1);
-    const returnDate = retDate.toISOString().split('T')[0];
-    
-    const searchParams = {
-      origin,
-      destination: params.destination,
-      departureDate,
-      returnDate,
-      adults,
-      children,
-      infantsOnLap,
-      tripType,
-      cabinClass: 'economy' as const,
-    };
-    
-    const entryUrl = generateGoogleFlightsQueryUrl(searchParams);
-    
-    const formatDateShort = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
-    const monthLabel = `${startDateObj.getMonth() + 1}月${params.dateRangeLabel || ''}`;
-    const depDateObj = new Date(departureDate);
-    const retDateObj = new Date(returnDate);
-    
-    let response = `✈️ 航空券検索結果\n\n`;
-    response += `📍 ${origin} → ${params.destination}\n`;
-    response += `📅 ${monthLabel}（${formatDateShort(startDateObj)} 〜 ${formatDateShort(endDateObj)}）\n`;
-    response += `📅 参考日程: ${formatDateShort(depDateObj)} 〜 ${formatDateShort(retDateObj)}（${stayDuration}日間）\n`;
-    response += `👥 ${totalPassengers}名`;
-    if (children > 0) response += `（大人${adults}、子供${children}）`;
-    response += `\n\n`;
-    response += `🔗 Google Flightsで検索\n${entryUrl}\n\n`;
-    response += `💡 リンク先で日付を変更して、最安値を探せます。\n`;
-    response += `💡 火・水曜出発が比較的安いことも多いです。`;
-    
-    return response;
-  }
-  
-  // 具体的な日付がある場合、または日付情報がない場合
+  // 出発日・帰国日を決定
   let departureDate: string;
   let returnDate: string;
   
-  if (params.departureDate) {
-    // 具体的な日付がある場合
+  // 抽象的な日付（「5月」「5月末」など）の場合は、期間の中央を出発日とする
+  if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
+    const startDateObj = new Date(params.departureDateStart);
+    const endDateObj = new Date(params.departureDateEnd);
+    const midDate = new Date((startDateObj.getTime() + endDateObj.getTime()) / 2);
+    departureDate = midDate.toISOString().split('T')[0];
+    
+    const retDate = new Date(midDate);
+    retDate.setDate(retDate.getDate() + stayDuration - 1);
+    returnDate = retDate.toISOString().split('T')[0];
+  } else if (params.departureDate) {
     departureDate = params.departureDate;
     if (params.returnDate) {
       returnDate = params.returnDate;
@@ -505,7 +561,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     returnDate = retDate.toISOString().split('T')[0];
   }
   
-  // 計算した日付を使用してリンクを生成
+  // 検索パラメータを構築
   const searchParams = {
     origin,
     destination: params.destination,
@@ -518,23 +574,21 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     cabinClass: 'economy' as const,
   };
   
-  const entryUrl = generateGoogleFlightsQueryUrl(searchParams);
+  // Skyscanner APIが利用可能な場合は価格比較を実行
+  if (isSkyscannerApiAvailable()) {
+    console.log('🔍 Starting price comparison with Skyscanner API...');
+    
+    try {
+      const comparisonResult = await compareFlightPrices(searchParams);
+      return formatComparisonResultForLine(comparisonResult);
+    } catch (error) {
+      console.error('Price comparison failed, falling back to simple result:', error);
+      return formatSimpleResultForLine(searchParams);
+    }
+  }
   
-  // 日付をフォーマット
-  const depDateObj = new Date(departureDate);
-  const retDateObj = new Date(returnDate);
-  const formatDate = (d: Date) => `${d.getMonth() + 1}月${d.getDate()}日`;
-  
-  let response = `✈️ 航空券検索結果\n\n`;
-  response += `📍 ${origin} → ${params.destination}\n`;
-  response += `📅 ${formatDate(depDateObj)} 〜 ${formatDate(retDateObj)}（${stayDuration}日間）\n`;
-  response += `👥 ${totalPassengers}名`;
-  if (children > 0) response += `（大人${adults}、子供${children}）`;
-  response += `\n\n`;
-  response += `🔗 Google Flightsで検索\n${entryUrl}\n\n`;
-  response += `💡 日付は変更可能です。火・水曜出発が比較的安いことも多いです。`;
-  
-  return response;
+  // APIが利用不可の場合はシンプルな結果（リンクのみ）を返す
+  return formatSimpleResultForLine(searchParams);
 }
 
 async function handleGeneralQuery(userId: string, message: string): Promise<string> {

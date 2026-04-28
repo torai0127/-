@@ -6,7 +6,10 @@ Unisia（ユニシア）の航空券手配LINEボット。
 ## 機能
 
 ### 基本機能
-- ✈️ **航空券検索**: 条件からGoogle Flightsの**購入前エントリURL**を生成（往復・人数を自然文で指定。`/flights/booking?tfs=` は便確定後のみのためボットでは再現不可）
+- ✈️ **航空券検索**: 条件からGoogle Flightsの**購入前エントリURL**を生成（往復・人数を自然文で指定）
+- 💰 **複数サイト価格比較**: Skyscanner APIでリアルタイム価格取得、最安値を自動提示
+- 🔗 **11サイト対応**: Google Flights, Skyscanner, Trip.com, エアトリ, トラベルコ, スカイチケット, さくらトラベル, Kayak, Momondo, Kiwi.com, eDreams
+- 💵 **アフィリエイト対応**: Travelpayouts連携で収益化
 - 📝 **アンケート**: ユーザーの興味地域・予算などを登録
 - 🌍 **治安情報**: 外務省データに基づく安全情報を提供
 - 🤖 **AI相談**: GPT-4o-miniによる旅行相談
@@ -44,12 +47,20 @@ cp .env.example .env
 `.env` を編集:
 
 ```env
+# 必須
 LINE_CHANNEL_ACCESS_TOKEN=your_token
 LINE_CHANNEL_SECRET=your_secret
 OPENAI_API_KEY=your_api_key
 ADMIN_API_KEY=your_admin_key  # 管理API用
 PORT=3001
+
+# 価格比較API（推奨）
+RAPIDAPI_KEY=your_rapidapi_key  # Skyscanner価格取得
+TRAVELPAYOUTS_TOKEN=your_token  # アフィリエイト収益化
+TRAVELPAYOUTS_MARKER=your_marker_id
 ```
+
+> 📖 詳細なAPI登録手順は [docs/API_SETUP_GUIDE.md](docs/API_SETUP_GUIDE.md) を参照
 
 ### 3. ローカル自己テスト（LINE不要）
 
@@ -149,10 +160,32 @@ SQLiteを使用。`data/flight-bot.db` に保存。
 - `notifications`: 配信履歴
 - `conversations`: 会話ログ
 
-## 今後の拡張（Phase 2）
+## 対応サイト一覧
 
-- [ ] Amadeus API連携（リアルタイム価格取得）
-- [ ] 自動価格監視
+| サイト | 価格取得 | リンク生成 | アフィリエイト |
+|--------|----------|------------|----------------|
+| Google Flights | ❌ | ✅ | ❌ |
+| Skyscanner | ✅ | ✅ | ✅ |
+| Trip.com | ⚠️参考価格 | ✅ | ✅ |
+| エアトリ | ❌ | ✅ | ❌ |
+| トラベルコ | ❌ | ✅ | ❌ |
+| スカイチケット | ❌ | ✅ | ❌ |
+| さくらトラベル | ❌ | ✅ | ❌ |
+| Kayak | ❌ | ✅ | ❌ |
+| Momondo | ❌ | ✅ | ❌ |
+| Kiwi.com | ❌ | ✅ | ❌ |
+| eDreams | ❌ | ✅ | ❌ |
+
+> ✅ = 対応、⚠️ = 一部対応、❌ = 未対応
+
+## 今後の拡張（Phase 3）
+
+- [x] ~~Skyscanner API連携（リアルタイム価格取得）~~
+- [x] ~~複数サイトのディープリンク生成~~
+- [x] ~~Travelpayoutsアフィリエイト対応~~
+- [ ] Trip.com Affiliate API連携
+- [ ] Kayak Partner API連携
+- [ ] 自動価格監視・アラート機能
 - [ ] リッチメニュー対応
 - [ ] Lステップ/エルメとの中継サーバー統合
 
