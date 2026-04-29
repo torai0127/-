@@ -29,6 +29,7 @@ export async function forwardWebhook(request: ForwardRequest): Promise<ForwardRe
     // LINE署名を再計算（転送先でも検証できるように）
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'X-Forwarded-From': 'unisia-webhook-proxy',
       ...request.headers,
     };
     

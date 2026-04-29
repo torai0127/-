@@ -295,13 +295,18 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
   const textMessage = messageEvent.message as TextMessage;
   const userId = messageEvent.source.userId;
   
-  if (!userId || !lineClient) {
-    console.warn('No userId or lineClient');
+  if (!userId) {
+    console.warn('⚠️ No userId in event');
+    return;
+  }
+  
+  if (!lineClient) {
+    console.error('❌ LINE client not initialized! Check LINE_CHANNEL_ACCESS_TOKEN');
     return;
   }
 
   const userMessage = textMessage.text.trim();
-  console.log(`📩 Flight Bot received from ${userId}: ${userMessage}`);
+  console.log(`📩 Flight Bot received from ${userId}: ${userMessage.substring(0, 50)}...`);
 
   try {
     const user = getOrCreateUser(userId);

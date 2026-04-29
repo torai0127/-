@@ -24,30 +24,42 @@ app.get('/health', (_, res) => {
   });
 });
 
-// Webhookはrawボディで受け取る（署名検証のため）
+// Webhookはrawボディとjsonの両方に対応
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const signature = req.headers['x-line-signature'] as string;
-  const body = req.body as Buffer;
-  
-  // 署名検証
-  if (LINE_CHANNEL_SECRET && signature) {
-    const hash = crypto
-      .createHmac('sha256', LINE_CHANNEL_SECRET)
-      .update(body)
-      .digest('base64');
-    
-    if (hash !== signature) {
-      console.error('❌ Invalid signature');
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
-  }
+  console.log('📨 Webhook received');
   
   let parsedBody;
-  try {
-    parsedBody = JSON.parse(body.toString());
-  } catch (e) {
-    console.error('❌ Failed to parse body');
-    return res.status(400).json({ error: 'Invalid body' });
+  
+  // リクエストボディがBufferの場合（LINE直接 or proxy経由）
+  if (Buffer.isBuffer(req.body)) {
+    const body = req.body as Buffer;
+    const signature = req.headers['x-line-signature'] as string;
+    
+    // 署名検証（webhook-proxyからの転送時はスキップ可）
+    // X-Forwarded-Fromヘッダーがある場合は内部転送とみなす
+    const isInternalForward = req.headers['x-forwarded-from'] === 'unisia-webhook-proxy';
+    
+    if (LINE_CHANNEL_SECRET && signature && !isInternalForward) {
+      const hash = crypto
+        .createHmac('sha256', LINE_CHANNEL_SECRET)
+        .update(body)
+        .digest('base64');
+      
+      if (hash !== signature) {
+        console.error('❌ Invalid signature');
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+    }
+    
+    try {
+      parsedBody = JSON.parse(body.toString());
+    } catch (e) {
+      console.error('❌ Failed to parse body');
+      return res.status(400).json({ error: 'Invalid body' });
+    }
+  } else {
+    // JSONとして既にパースされている場合
+    parsedBody = req.body;
   }
   
   const events: WebhookEvent[] = parsedBody.events || [];
@@ -58,10 +70,12 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   
   // 非同期でイベント処理
   for (const event of events) {
+    console.log(`🔄 Processing event: ${event.type}`);
     try {
       await handleEvent(event);
+      console.log(`✅ Event processed successfully`);
     } catch (error) {
-      console.error('Event handling error:', error);
+      console.error('❌ Event handling error:', error);
     }
   }
 });

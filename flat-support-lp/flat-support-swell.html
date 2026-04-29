@@ -1,0 +1,343 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+.fs * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
+.fs { font-family: 'Noto Sans JP', sans-serif !important; font-size: 16px !important; line-height: 1.9 !important; color: #1a202c !important; background: #fff !important; }
+.fs a { text-decoration: none !important; }
+.fs-container { max-width: 1200px !important; margin: 0 auto !important; padding: 0 40px !important; }
+@keyframes fs-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(237, 137, 54, 0.5); } 50% { box-shadow: 0 0 30px 10px rgba(237, 137, 54, 0.3); } }
+@keyframes fs-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@media (max-width: 768px) {
+.fs-container { padding: 0 20px !important; }
+.fs-hide-mobile { display: none !important; }
+.fs-header-logo { font-size: 16px !important; }
+.fs-header-btn { padding: 10px 18px !important; font-size: 12px !important; }
+.fs-hero-badge { padding: 10px 20px !important; font-size: 12px !important; }
+.fs-hero-btn { padding: 18px 40px !important; font-size: 14px !important; }
+.fs-section { padding: 80px 15px !important; }
+.fs-stats { gap: 40px !important; }
+.fs-stat-num { font-size: 50px !important; }
+.fs-problem-item { padding: 20px !important; gap: 15px !important; }
+.fs-problem-icon { width: 50px !important; height: 50px !important; font-size: 24px !important; }
+.fs-feature-card { padding: 35px 25px !important; }
+.fs-case-card { padding: 30px 20px !important; }
+.fs-case-price { font-size: 24px !important; }
+.fs-plan-card { padding: 40px 25px !important; }
+.fs-plan-price { font-size: 56px !important; }
+.fs-about-grid { gap: 40px !important; }
+.fs-about-img { width: 150px !important; height: 150px !important; }
+.fs-faq-item { padding: 25px 20px !important; }
+.fs-final-price { font-size: 70px !important; }
+.fs-final-btn { padding: 20px 45px !important; font-size: 15px !important; }
+.fs-footer-links { gap: 20px !important; flex-direction: column !important; }
+}
+</style>
+
+<div class="fs">
+
+<!-- ヘッダー -->
+<div style="position:fixed;top:0;left:0;right:0;z-index:9999;padding:15px 0;background:rgba(26,54,93,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.1);">
+<div class="fs-container" style="display:flex;justify-content:space-between;align-items:center;">
+<div style="display:flex;align-items:center;gap:10px;">
+<span style="width:40px;height:40px;background:linear-gradient(135deg,#ed8936,#c05621);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff !important;font-family:Montserrat;font-size:18px;font-weight:700;">U</span>
+<span class="fs-header-logo" style="font-family:Montserrat;font-size:20px;font-weight:700;color:#fff !important;letter-spacing:0.15em;">UNISIA</span>
+</div>
+<a href="https://ltdunisia.memberpay.jp/plan/item/payment/bdhrnpf?code=vaghjnzlsx7ao9rulcy6" class="fs-header-btn" style="display:inline-block;padding:12px 28px !important;background:#ed8936 !important;color:#fff !important;font-size:13px;font-weight:600;border-radius:50px;box-shadow:0 4px 20px rgba(237,137,54,0.4);">初月500円で始める</a>
+</div>
+</div>
+
+<!-- ヒーロー -->
+<div class="fs-section" style="min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;padding:120px 20px 80px;background:linear-gradient(180deg,rgba(26,54,93,0.8),rgba(26,32,44,0.95)),url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1920&q=80') center/cover no-repeat;">
+<div style="text-align:center;position:relative;z-index:1;max-width:100%;">
+<div class="fs-hero-badge" style="display:inline-flex;align-items:center;gap:10px;padding:12px 28px !important;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2);border-radius:50px;font-size:13px;color:#fff !important;margin-bottom:30px;">
+<span style="font-size:18px;">✈️</span>
+<span>初月500円キャンペーン中</span>
+</div>
+<h1 style="font-family:'Playfair Display',serif !important;font-size:clamp(28px,6vw,56px) !important;line-height:1.4 !important;color:#fff !important;margin-bottom:20px !important;font-weight:600 !important;text-shadow:0 4px 30px rgba(0,0,0,0.3);">
+航空券、<br>
+<span style="background:linear-gradient(135deg,#ed8936,#c05621);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;">最大34万円</span><br>
+安くなりました。
+</h1>
+<p style="font-size:clamp(14px,4vw,18px) !important;color:rgba(255,255,255,0.9) !important;margin-bottom:35px !important;font-weight:300 !important;line-height:1.9 !important;">家族全員分の航空券を、<br class="fs-hide-mobile" style="display:none;">あなたの代わりに最安値で探します。</p>
+<div style="display:flex;justify-content:center;gap:15px;margin-bottom:35px;flex-wrap:wrap;">
+<div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.9) !important;font-size:13px;"><span style="width:22px;height:22px;background:#ed8936;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff !important;">✓</span><span>家族全員分サポート</span></div>
+<div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.9) !important;font-size:13px;"><span style="width:22px;height:22px;background:#ed8936;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff !important;">✓</span><span>LINE相談OK</span></div>
+<div style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.9) !important;font-size:13px;"><span style="width:22px;height:22px;background:#ed8936;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff !important;">✓</span><span>いつでも解約可能</span></div>
+</div>
+<a href="https://ltdunisia.memberpay.jp/plan/item/payment/bdhrnpf?code=vaghjnzlsx7ao9rulcy6" class="fs-hero-btn" style="display:inline-flex;align-items:center;gap:12px;padding:20px 50px !important;background:linear-gradient(135deg,#ed8936,#c05621) !important;color:#fff !important;font-size:15px;font-weight:600;border-radius:50px;box-shadow:0 10px 40px rgba(237,137,54,0.4);animation:fs-pulse 2s infinite;">
+<span>初月500円で始める</span>
+<span style="font-size:18px;">→</span>
+</a>
+<p style="margin-top:20px !important;font-size:12px !important;color:rgba(255,255,255,0.7) !important;">※ 翌月以降 8,800円/月 ・ 解約手数料なし</p>
+</div>
+</div>
+
+<!-- 実績 -->
+<div class="fs-section" style="padding:80px 20px;background:#fff;position:relative;">
+<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(135deg,#667eea,#4299e1,#38b2ac);"></div>
+<div class="fs-container">
+<div class="fs-stats" style="display:flex;justify-content:center;gap:60px;flex-wrap:wrap;">
+<div style="text-align:center;">
+<span class="fs-stat-num" style="font-family:Montserrat;font-size:clamp(45px,10vw,80px);font-weight:700;background:linear-gradient(135deg,#667eea,#4299e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;">34</span>
+<span style="font-size:20px;background:linear-gradient(135deg,#667eea,#4299e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:600;">万円</span>
+<span style="display:block;margin-top:10px !important;font-size:13px;color:#718096 !important;letter-spacing:0.1em;">最大節約額</span>
+</div>
+<div style="text-align:center;">
+<span class="fs-stat-num" style="font-family:Montserrat;font-size:clamp(45px,10vw,80px);font-weight:700;background:linear-gradient(135deg,#667eea,#4299e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;">17</span>
+<span style="font-size:20px;background:linear-gradient(135deg,#667eea,#4299e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:600;">カ国</span>
+<span style="display:block;margin-top:10px !important;font-size:13px;color:#718096 !important;letter-spacing:0.1em;">代表の渡航経験</span>
+</div>
+<div style="text-align:center;">
+<span class="fs-stat-num" style="font-family:Montserrat;font-size:clamp(45px,10vw,80px);font-weight:700;background:linear-gradient(135deg,#667eea,#4299e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;">500</span>
+<span style="font-size:20px;background:linear-gradient(135deg,#667eea,#4299e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:600;">円</span>
+<span style="display:block;margin-top:10px !important;font-size:13px;color:#718096 !important;letter-spacing:0.1em;">初月お試し価格</span>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 悩み -->
+<div class="fs-section" style="padding:100px 20px;background:#f7fafc;">
+<div class="fs-container">
+<h2 style="text-align:center;margin-bottom:50px !important;font-size:clamp(22px,5vw,38px) !important;color:#1a202c !important;font-weight:700 !important;">
+<span style="display:block;font-family:Montserrat;font-size:12px;color:#ed8936 !important;letter-spacing:0.3em;margin-bottom:12px !important;font-weight:600;">PROBLEMS</span>
+こんな悩み、ありませんか？
+</h2>
+<div style="display:flex;flex-direction:column;gap:15px;max-width:600px;margin:0 auto;">
+<div class="fs-problem-item" style="display:flex;align-items:center;gap:20px;padding:25px 30px !important;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.08);"><div class="fs-problem-icon" style="font-size:28px;flex-shrink:0;width:60px;height:60px;background:#f7fafc;border-radius:50%;display:flex;align-items:center;justify-content:center;">😰</div><p style="font-size:15px !important;color:#1a202c !important;font-weight:500 !important;">航空券、高すぎない？</p></div>
+<div class="fs-problem-item" style="display:flex;align-items:center;gap:20px;padding:25px 30px !important;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.08);"><div class="fs-problem-icon" style="font-size:28px;flex-shrink:0;width:60px;height:60px;background:#f7fafc;border-radius:50%;display:flex;align-items:center;justify-content:center;">😩</div><p style="font-size:15px !important;color:#1a202c !important;font-weight:500 !important;">自分で調べるのが面倒…</p></div>
+<div class="fs-problem-item" style="display:flex;align-items:center;gap:20px;padding:25px 30px !important;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.08);"><div class="fs-problem-icon" style="font-size:28px;flex-shrink:0;width:60px;height:60px;background:#f7fafc;border-radius:50%;display:flex;align-items:center;justify-content:center;">😱</div><p style="font-size:15px !important;color:#1a202c !important;font-weight:500 !important;">家族4人分の航空券、いくらになるか怖い</p></div>
+<div class="fs-problem-item" style="display:flex;align-items:center;gap:20px;padding:25px 30px !important;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.08);"><div class="fs-problem-icon" style="font-size:28px;flex-shrink:0;width:60px;height:60px;background:#f7fafc;border-radius:50%;display:flex;align-items:center;justify-content:center;">🤔</div><p style="font-size:15px !important;color:#1a202c !important;font-weight:500 !important;">エージェントに頼むと高いって聞くけど…</p></div>
+</div>
+<div style="text-align:center;margin-top:50px !important;color:#ed8936 !important;font-size:28px;animation:fs-float 2s infinite;">▼</div>
+</div>
+</div>
+
+<!-- 解決策 -->
+<div class="fs-section" style="padding:100px 20px;background:linear-gradient(180deg,rgba(26,54,93,0.85),rgba(26,32,44,0.95)),url('https://images.unsplash.com/photo-1539635278303-d4002c07eae3?w=1920&q=80') center/cover no-repeat;">
+<div class="fs-container">
+<h2 style="text-align:center;margin-bottom:50px !important;font-size:clamp(22px,5vw,38px) !important;color:#fff !important;font-weight:700 !important;">
+<span style="display:block;font-family:Montserrat;font-size:12px;color:#f6ad55 !important;letter-spacing:0.3em;margin-bottom:12px !important;font-weight:600;">SOLUTION</span>
+その悩み、<br>フラットサポートが解決します
+</h2>
+<div style="max-width:700px;margin:0 auto;">
+<div style="text-align:center;padding:40px 25px !important;background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.2);border-radius:25px;">
+<p style="font-size:clamp(15px,4vw,18px) !important;color:#fff !important;line-height:2.1 !important;margin-bottom:15px !important;font-weight:300 !important;">
+フラットサポートは、<br>
+あなたの航空券を<strong style="font-weight:600;color:#f6ad55 !important;">「最安値」で手配する</strong><br>
+月額制のサポートサービスです。
+</p>
+<p style="font-size:clamp(14px,3.5vw,16px) !important;color:rgba(255,255,255,0.9) !important;line-height:2 !important;font-weight:300 !important;">
+エージェントのように高額なパッケージを売りつけません。<br>
+シンプルに「航空券を安く取る」ことだけに集中します。
+</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 特徴 -->
+<div class="fs-section" style="padding:100px 20px;background:#fff;">
+<div class="fs-container">
+<h2 style="text-align:center;margin-bottom:50px !important;font-size:clamp(22px,5vw,38px) !important;color:#1a202c !important;font-weight:700 !important;">
+<span style="display:block;font-family:Montserrat;font-size:12px;color:#ed8936 !important;letter-spacing:0.3em;margin-bottom:12px !important;font-weight:600;">FEATURES</span>
+選ばれる3つの理由
+</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:30px;">
+<div class="fs-feature-card" style="text-align:center;padding:40px 30px !important;background:#fff;border-radius:20px;border:2px solid #f7fafc;box-shadow:0 8px 30px rgba(0,0,0,0.05);">
+<div style="font-size:45px;margin-bottom:20px !important;animation:fs-float 4s infinite;">💰</div>
+<div style="font-family:Montserrat;font-size:13px;color:#ed8936 !important;margin-bottom:15px !important;font-weight:700;letter-spacing:0.2em;">01</div>
+<h3 style="font-size:18px !important;color:#1a202c !important;margin-bottom:15px !important;font-weight:700 !important;">最大34万円安くなる</h3>
+<p style="font-size:14px !important;color:#4a5568 !important;line-height:1.8 !important;">大手エージェントより圧倒的に安く航空券を手配。世界一周16万円の実績あり。</p>
+</div>
+<div class="fs-feature-card" style="text-align:center;padding:40px 30px !important;background:#fff;border-radius:20px;border:2px solid #f7fafc;box-shadow:0 8px 30px rgba(0,0,0,0.05);">
+<div style="font-size:45px;margin-bottom:20px !important;animation:fs-float 4s infinite;animation-delay:0.5s;">👨‍👩‍👧‍👦</div>
+<div style="font-family:Montserrat;font-size:13px;color:#ed8936 !important;margin-bottom:15px !important;font-weight:700;letter-spacing:0.2em;">02</div>
+<h3 style="font-size:18px !important;color:#1a202c !important;margin-bottom:15px !important;font-weight:700 !important;">家族全員分サポート</h3>
+<p style="font-size:14px !important;color:#4a5568 !important;line-height:1.8 !important;">月額8,800円で、ご家族全員の航空券を手配。追加料金は一切かかりません。</p>
+</div>
+<div class="fs-feature-card" style="text-align:center;padding:40px 30px !important;background:#fff;border-radius:20px;border:2px solid #f7fafc;box-shadow:0 8px 30px rgba(0,0,0,0.05);">
+<div style="font-size:45px;margin-bottom:20px !important;animation:fs-float 4s infinite;animation-delay:1s;">💬</div>
+<div style="font-family:Montserrat;font-size:13px;color:#ed8936 !important;margin-bottom:15px !important;font-weight:700;letter-spacing:0.2em;">03</div>
+<h3 style="font-size:18px !important;color:#1a202c !important;margin-bottom:15px !important;font-weight:700 !important;">LINEでいつでも相談</h3>
+<p style="font-size:14px !important;color:#4a5568 !important;line-height:1.8 !important;">「この時期はいくら？」「どのルートが安い？」気軽にLINEで相談できます。</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 事例 -->
+<div class="fs-section" style="padding:100px 20px;background:linear-gradient(135deg,rgba(26,54,93,0.95),rgba(44,82,130,0.95)),url('https://images.unsplash.com/photo-1500835556837-99ac94a94552?w=1920&q=80') center/cover no-repeat;">
+<div class="fs-container">
+<h2 style="text-align:center;margin-bottom:50px !important;font-size:clamp(22px,5vw,38px) !important;color:#fff !important;font-weight:700 !important;">
+<span style="display:block;font-family:Montserrat;font-size:12px;color:#f6ad55 !important;letter-spacing:0.3em;margin-bottom:12px !important;font-weight:600;">RESULTS</span>
+実際にお得になった事例
+</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:25px;">
+<div class="fs-case-card" style="background:#fff;padding:35px 25px !important;text-align:center;border-radius:20px;position:relative;overflow:hidden;">
+<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(135deg,#ed8936,#c05621);"></div>
+<div style="display:inline-block;padding:6px 16px !important;background:linear-gradient(135deg,#667eea,#4299e1);color:#fff !important;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:0.15em;border-radius:50px;margin-bottom:20px !important;">CASE 01</div>
+<div style="font-size:18px !important;color:#1a202c !important;margin-bottom:25px !important;font-weight:700 !important;">🌍 世界一周航空券</div>
+<div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:25px !important;flex-wrap:wrap;">
+<div style="text-align:center;"><span style="display:block;font-size:11px;color:#718096 !important;margin-bottom:8px !important;">大手エージェント</span><span style="font-family:Montserrat;font-size:18px;color:#718096 !important;text-decoration:line-through;">50万円</span></div>
+<span style="color:#ed8936 !important;font-size:20px;">→</span>
+<div style="text-align:center;"><span style="display:block;font-size:11px;color:#718096 !important;margin-bottom:8px !important;">フラットサポート</span><span class="fs-case-price" style="font-family:Montserrat;font-size:28px;color:#1a365d !important;font-weight:700;">16万円</span></div>
+</div>
+<div style="display:inline-block;padding:10px 25px !important;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;font-size:14px;font-weight:700;border-radius:50px;">34万円お得！</div>
+</div>
+<div class="fs-case-card" style="background:#fff;padding:35px 25px !important;text-align:center;border-radius:20px;position:relative;overflow:hidden;">
+<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(135deg,#ed8936,#c05621);"></div>
+<div style="display:inline-block;padding:6px 16px !important;background:linear-gradient(135deg,#667eea,#4299e1);color:#fff !important;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:0.15em;border-radius:50px;margin-bottom:20px !important;">CASE 02</div>
+<div style="font-size:18px !important;color:#1a202c !important;margin-bottom:25px !important;font-weight:700 !important;">🇬🇧 イギリス往復</div>
+<div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:25px !important;flex-wrap:wrap;">
+<div style="text-align:center;"><span style="display:block;font-size:11px;color:#718096 !important;margin-bottom:8px !important;">大手エージェント</span><span style="font-family:Montserrat;font-size:18px;color:#718096 !important;text-decoration:line-through;">33万円</span></div>
+<span style="color:#ed8936 !important;font-size:20px;">→</span>
+<div style="text-align:center;"><span style="display:block;font-size:11px;color:#718096 !important;margin-bottom:8px !important;">フラットサポート</span><span class="fs-case-price" style="font-family:Montserrat;font-size:28px;color:#1a365d !important;font-weight:700;">11万円</span></div>
+</div>
+<div style="display:inline-block;padding:10px 25px !important;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;font-size:14px;font-weight:700;border-radius:50px;">22万円お得！</div>
+</div>
+<div class="fs-case-card" style="background:#fff;padding:35px 25px !important;text-align:center;border-radius:20px;position:relative;overflow:hidden;">
+<div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(135deg,#ed8936,#c05621);"></div>
+<div style="display:inline-block;padding:6px 16px !important;background:linear-gradient(135deg,#667eea,#4299e1);color:#fff !important;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:0.15em;border-radius:50px;margin-bottom:20px !important;">CASE 03</div>
+<div style="font-size:18px !important;color:#1a202c !important;margin-bottom:25px !important;font-weight:700 !important;">🇦🇺 オーストラリア往復</div>
+<div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:25px !important;flex-wrap:wrap;">
+<div style="text-align:center;"><span style="display:block;font-size:11px;color:#718096 !important;margin-bottom:8px !important;">通常価格</span><span style="font-family:Montserrat;font-size:18px;color:#718096 !important;text-decoration:line-through;">18万円</span></div>
+<span style="color:#ed8936 !important;font-size:20px;">→</span>
+<div style="text-align:center;"><span style="display:block;font-size:11px;color:#718096 !important;margin-bottom:8px !important;">フラットサポート</span><span class="fs-case-price" style="font-family:Montserrat;font-size:28px;color:#1a365d !important;font-weight:700;">12万円</span></div>
+</div>
+<div style="display:inline-block;padding:10px 25px !important;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;font-size:14px;font-weight:700;border-radius:50px;">6万円お得！</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 料金 -->
+<div class="fs-section" style="padding:100px 20px;background:#fff;">
+<div class="fs-container">
+<h2 style="text-align:center;margin-bottom:50px !important;font-size:clamp(22px,5vw,38px) !important;color:#1a202c !important;font-weight:700 !important;">
+<span style="display:block;font-family:Montserrat;font-size:12px;color:#ed8936 !important;letter-spacing:0.3em;margin-bottom:12px !important;font-weight:600;">PRICING</span>
+料金プラン
+</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px;max-width:900px;margin:0 auto;">
+<div class="fs-plan-card" style="background:#fff;padding:45px 35px !important;border-radius:25px;position:relative;border:3px solid #ed8936;box-shadow:0 15px 50px rgba(237,137,54,0.2);">
+<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);padding:8px 25px !important;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:0.15em;border-radius:50px;">人気No.1</div>
+<div style="text-align:center;margin-bottom:30px !important;padding-bottom:30px !important;border-bottom:2px solid #f7fafc;">
+<h3 style="font-size:22px !important;color:#1a202c !important;margin-bottom:8px !important;font-weight:700 !important;">フラットサポート</h3>
+<p style="font-size:13px !important;color:#718096 !important;">航空券手配 + フルサポート</p>
+</div>
+<div style="text-align:center;margin-bottom:12px !important;">
+<span style="display:block;font-size:12px;color:#718096 !important;margin-bottom:5px !important;">初月</span>
+<span class="fs-plan-price" style="font-family:Montserrat;font-size:64px;background:linear-gradient(135deg,#ed8936,#c05621);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;line-height:1;">500</span>
+<span style="font-size:18px;color:#4a5568 !important;">円</span>
+</div>
+<p style="text-align:center;font-size:13px !important;color:#718096 !important;margin-bottom:30px !important;">翌月以降 8,800円/月</p>
+<ul style="list-style:none !important;margin-bottom:35px !important;">
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;border-bottom:1px solid #f7fafc;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>航空券の最安値検索＆手配</li>
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;border-bottom:1px solid #f7fafc;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span><strong style="color:#1a202c !important;">家族全員分サポート</strong>（追加料金なし）</li>
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;border-bottom:1px solid #f7fafc;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>24時間LINEサポート</li>
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;border-bottom:1px solid #f7fafc;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>現地トラブル対応</li>
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>ビザ申請サポート・海外保険のご案内</li>
+</ul>
+<a href="https://ltdunisia.memberpay.jp/plan/item/payment/bdhrnpf?code=vaghjnzlsx7ao9rulcy6" style="display:block;width:100%;padding:18px !important;text-align:center;background:linear-gradient(135deg,#ed8936,#c05621) !important;color:#fff !important;font-size:15px;font-weight:700;border-radius:50px;box-shadow:0 8px 25px rgba(237,137,54,0.4);">初月500円で始める</a>
+<p style="text-align:center;margin-top:15px !important;font-size:12px !important;color:#718096 !important;">※ いつでも解約OK・解約手数料なし</p>
+</div>
+<div class="fs-plan-card" style="background:#fff;padding:45px 35px !important;border-radius:25px;border:2px solid #f7fafc;">
+<div style="text-align:center;margin-bottom:30px !important;padding-bottom:30px !important;border-bottom:2px solid #f7fafc;">
+<h3 style="font-size:22px !important;color:#1a202c !important;margin-bottom:8px !important;font-weight:700 !important;">プレミアム</h3>
+<p style="font-size:13px !important;color:#718096 !important;">留学・ワーホリをフルサポート</p>
+</div>
+<div style="text-align:center;margin-bottom:12px !important;">
+<span style="font-family:Montserrat;font-size:44px;color:#1a202c !important;font-weight:700;line-height:1;">19,800</span>
+<span style="font-size:18px;color:#4a5568 !important;">円/月</span>
+</div>
+<p style="text-align:center;font-size:13px !important;color:#718096 !important;margin-bottom:30px !important;">&nbsp;</p>
+<ul style="list-style:none !important;margin-bottom:35px !important;">
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;border-bottom:1px solid #f7fafc;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>フラットサポートの内容すべて</li>
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;border-bottom:1px solid #f7fafc;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>ビザ申請代行</li>
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;border-bottom:1px solid #f7fafc;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>オンライン英会話（月4回）</li>
+<li style="display:flex;align-items:flex-start;gap:12px;padding:12px 0 !important;font-size:14px;color:#4a5568 !important;"><span style="width:22px;height:22px;background:linear-gradient(135deg,#667eea,#4299e1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff !important;font-size:11px;flex-shrink:0;">✓</span>帰国後の就職サポート</li>
+</ul>
+<a href="https://ltdunisia.memberpay.jp/plan/item/payment/lrx3sib?code=vaghjnzlsx7ao9rulcy6" style="display:block;width:100%;padding:18px !important;text-align:center;border:2px solid #1a365d;color:#1a365d !important;background:transparent !important;font-size:15px;font-weight:700;border-radius:50px;">このプランで始める</a>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 代表 -->
+<div class="fs-section" style="padding:100px 20px;background:#f7fafc;">
+<div class="fs-container">
+<h2 style="text-align:center;margin-bottom:50px !important;font-size:clamp(22px,5vw,38px) !important;color:#1a202c !important;font-weight:700 !important;">
+<span style="display:block;font-family:Montserrat;font-size:12px;color:#ed8936 !important;letter-spacing:0.3em;margin-bottom:12px !important;font-weight:600;">ABOUT</span>
+代表紹介
+</h2>
+<div class="fs-about-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:50px;align-items:center;max-width:900px;margin:0 auto;">
+<div style="text-align:center;">
+<img class="fs-about-img" src="https://unisia.net/wp-content/uploads/2026/04/IMG_2156.jpg" alt="トライ" style="width:180px;height:180px;border-radius:50%;object-fit:cover;object-position:center top;margin:0 auto 20px !important;display:block;box-shadow:0 15px 40px rgba(66,153,225,0.3);border:4px solid #fff;">
+<div style="display:inline-flex;align-items:center;gap:8px;padding:10px 25px !important;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;font-size:14px;font-weight:700;border-radius:50px;">🌍 17カ国渡航</div>
+</div>
+<div>
+<h3 style="font-size:28px !important;color:#1a202c !important;margin-bottom:8px !important;font-weight:700 !important;">トライ</h3>
+<p style="font-size:13px !important;color:#718096 !important;margin-bottom:25px !important;letter-spacing:0.1em;">株式会社Unisia 代表取締役</p>
+<p style="font-size:15px !important;color:#4a5568 !important;margin-bottom:20px !important;line-height:2 !important;">貯金5万円・片道切符で海外へ飛び出し、<strong style="color:#ed8936 !important;">17カ国以上</strong>を回りました。</p>
+<p style="font-size:15px !important;color:#4a5568 !important;margin-bottom:20px !important;line-height:2 !important;">留学エージェントに<strong style="color:#ed8936 !important;">200万円損した</strong>経験から、「もっと安く、シンプルに海外に行ける方法」を追求してきました。</p>
+<p style="font-size:15px !important;color:#4a5568 !important;line-height:2 !important;padding-top:20px !important;border-top:2px solid #e2e8f0;">航空券の取り方を変えるだけで、数万円〜数十万円変わることを知ってほしい。<strong style="color:#ed8936 !important;">あなたの海外挑戦を全力でサポートします。</strong></p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- FAQ -->
+<div class="fs-section" style="padding:100px 20px;background:#fff;">
+<div class="fs-container">
+<h2 style="text-align:center;margin-bottom:50px !important;font-size:clamp(22px,5vw,38px) !important;color:#1a202c !important;font-weight:700 !important;">
+<span style="display:block;font-family:Montserrat;font-size:12px;color:#ed8936 !important;letter-spacing:0.3em;margin-bottom:12px !important;font-weight:600;">FAQ</span>
+よくある質問
+</h2>
+<div style="max-width:700px;margin:0 auto;">
+<div class="fs-faq-item" style="margin-bottom:20px !important;background:#f7fafc;border-radius:16px;padding:30px 30px !important;">
+<div style="display:flex;gap:15px;margin-bottom:15px !important;"><span style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-size:14px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#667eea,#4299e1);color:#fff !important;">Q</span><p style="font-size:15px !important;color:#1a202c !important;font-weight:700 !important;padding-top:4px !important;">本当に安くなりますか？</p></div>
+<div style="display:flex;gap:15px;"><span style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-size:14px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;">A</span><p style="font-size:14px !important;color:#4a5568 !important;line-height:1.9 !important;padding-top:4px !important;">はい。大手エージェントと比較して、最大34万円お得になった実績があります。</p></div>
+</div>
+<div class="fs-faq-item" style="margin-bottom:20px !important;background:#f7fafc;border-radius:16px;padding:30px 30px !important;">
+<div style="display:flex;gap:15px;margin-bottom:15px !important;"><span style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-size:14px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#667eea,#4299e1);color:#fff !important;">Q</span><p style="font-size:15px !important;color:#1a202c !important;font-weight:700 !important;padding-top:4px !important;">家族は何人まで使えますか？</p></div>
+<div style="display:flex;gap:15px;"><span style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-size:14px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;">A</span><p style="font-size:14px !important;color:#4a5568 !important;line-height:1.9 !important;padding-top:4px !important;">1契約につき最大9名様までご利用いただけます。</p></div>
+</div>
+<div class="fs-faq-item" style="margin-bottom:20px !important;background:#f7fafc;border-radius:16px;padding:30px 30px !important;">
+<div style="display:flex;gap:15px;margin-bottom:15px !important;"><span style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-size:14px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#667eea,#4299e1);color:#fff !important;">Q</span><p style="font-size:15px !important;color:#1a202c !important;font-weight:700 !important;padding-top:4px !important;">解約はいつでもできますか？</p></div>
+<div style="display:flex;gap:15px;"><span style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:Montserrat;font-size:14px;font-weight:700;border-radius:8px;background:linear-gradient(135deg,#ed8936,#c05621);color:#fff !important;">A</span><p style="font-size:14px !important;color:#4a5568 !important;line-height:1.9 !important;padding-top:4px !important;">はい。いつでも解約可能です。解約手数料もかかりません。</p></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 最終CTA -->
+<div class="fs-section" style="padding:100px 20px;background:linear-gradient(180deg,rgba(26,54,93,0.85),rgba(26,32,44,0.95)),url('https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=1920&q=80') center/cover no-repeat;">
+<div style="text-align:center;">
+<h2 style="font-family:'Playfair Display',serif !important;font-size:clamp(24px,5vw,42px) !important;color:#fff !important;margin-bottom:20px !important;font-weight:600 !important;line-height:1.5 !important;text-shadow:0 4px 30px rgba(0,0,0,0.3);">まずは初月500円で<br>お試しください</h2>
+<p style="font-size:15px !important;color:rgba(255,255,255,0.85) !important;margin-bottom:40px !important;">航空券1回の手配で、数万円〜数十万円の差が出ます。</p>
+<div style="margin-bottom:35px !important;">
+<span style="display:block;font-size:13px;color:rgba(255,255,255,0.7) !important;margin-bottom:8px !important;letter-spacing:0.2em;">初月</span>
+<span class="fs-final-price" style="font-family:Montserrat;font-size:clamp(60px,15vw,90px);color:#fff !important;font-weight:800;line-height:1;text-shadow:0 5px 30px rgba(0,0,0,0.3);">500</span>
+<span style="font-size:26px;color:#fff !important;margin-left:5px;">円</span>
+</div>
+<a href="https://ltdunisia.memberpay.jp/plan/item/payment/bdhrnpf?code=vaghjnzlsx7ao9rulcy6" class="fs-final-btn" style="display:inline-flex;align-items:center;gap:12px;padding:22px 60px !important;background:#fff !important;color:#1a365d !important;font-size:16px;font-weight:700;border-radius:50px;box-shadow:0 12px 40px rgba(0,0,0,0.3);animation:fs-pulse 2s infinite;">
+<span>初月500円で始める</span>
+<span style="font-size:18px;">→</span>
+</a>
+<p style="margin-top:20px !important;font-size:12px !important;color:rgba(255,255,255,0.6) !important;">※ いつでも解約可能・解約手数料なし</p>
+</div>
+</div>
+
+<!-- フッター -->
+<div style="padding:60px 20px;background:#1a202c;text-align:center;">
+<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:30px !important;">
+<span style="width:40px;height:40px;background:linear-gradient(135deg,#ed8936,#c05621);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff !important;font-family:Montserrat;font-size:18px;font-weight:700;">U</span>
+<span style="font-family:Montserrat;font-size:20px;font-weight:700;color:#fff !important;letter-spacing:0.15em;">UNISIA</span>
+</div>
+<div class="fs-footer-links" style="display:flex;justify-content:center;gap:40px;margin-bottom:25px !important;flex-wrap:wrap;">
+<a href="https://nomadfree.store/flat-tokusyouhou-2/" style="color:rgba(255,255,255,0.6) !important;font-size:12px;letter-spacing:0.05em;">特定商取引法に基づく表記</a>
+<a href="https://nomadfree.store/privacy-policy/" style="color:rgba(255,255,255,0.6) !important;font-size:12px;letter-spacing:0.05em;">プライバシーポリシー</a>
+</div>
+<p style="font-size:11px !important;color:rgba(255,255,255,0.4) !important;letter-spacing:0.05em;">© 2026 株式会社Unisia All Rights Reserved.</p>
+</div>
+
+</div>

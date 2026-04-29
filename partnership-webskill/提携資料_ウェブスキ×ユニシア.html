@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>業務提携のご提案 | ウェブスキ × UNISIA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #ed8936;
+            --accent-light: #f6ad55;
+            --sky-blue: #4299e1;
+            --text-dark: #1a202c;
+            --text-medium: #4a5568;
+            --text-light: #718096;
+            --white: #ffffff;
+            --bg-light: #f7fafc;
+            --gradient-sky: linear-gradient(135deg, #667eea 0%, #4299e1 50%, #38b2ac 100%);
+            --gradient-ocean: linear-gradient(180deg, #2c5282 0%, #1a365d 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-dark);
+            background: var(--white);
+        }
+
+        /* スライドスタイル */
+        .slide {
+            width: 100%;
+            max-width: 960px;
+            min-height: 540px;
+            margin: 0 auto 40px;
+            padding: 50px 60px;
+            background: var(--white);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            page-break-after: always;
+            position: relative;
+        }
+
+        .slide:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 表紙 */
+        .slide-cover {
+            background: var(--gradient-ocean);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .slide-cover h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .slide-cover .subtitle {
+            font-size: 20px;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 60px;
+        }
+
+        .slide-cover .company-names {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 80px;
+        }
+
+        .slide-cover .date {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .slide-cover .from {
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* セクションヘッダー */
+        .section-number {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .slide h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--accent);
+        }
+
+        .slide h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 25px 0 15px;
+        }
+
+        .slide p {
+            color: var(--text-medium);
+            margin-bottom: 15px;
+        }
+
+        /* テーブル */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: var(--primary);
+            color: var(--white);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        td {
+            font-size: 13px;
+            color: var(--text-medium);
+        }
+
+        tr:nth-child(even) {
+            background: var(--bg-light);
+        }
+
+        .highlight-row {
+            background: rgba(237, 137, 54, 0.1) !important;
+        }
+
+        .highlight-row td {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* ボックス */
+        .box {
+            background: var(--bg-light);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .box-accent {
+            background: linear-gradient(135deg, rgba(237, 137, 54, 0.1) 0%, rgba(246, 173, 85, 0.1) 100%);
+            border-left: 4px solid var(--accent);
+        }
+
+        .box-primary {
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.05) 0%, rgba(44, 82, 130, 0.05) 100%);
+            border-left: 4px solid var(--primary);
+        }
+
+        /* フロー図 */
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: var(--bg-light);
+            border-radius: 8px;
+        }
+
+        .flow-step {
+            text-align: center;
+            flex: 1;
+        }
+
+        .flow-step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: var(--white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            margin: 0 auto 10px;
+        }
+
+        .flow-step-text {
+            font-size: 12px;
+            color: var(--text-medium);
+        }
+
+        .flow-arrow {
+            color: var(--accent);
+            font-size: 24px;
+            padding: 0 10px;
+        }
+
+        /* メリットカード */
+        .merit-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .merit-card {
+            background: var(--white);
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .merit-card:hover {
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .merit-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-sky);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .merit-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .merit-desc {
+            font-size: 12px;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* スキーム図 */
+        .scheme-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 30px 0;
+            padding: 30px;
+            background: var(--bg-light);
+            border-radius: 12px;
+        }
+
+        .scheme-box {
+            background: var(--white);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 25px 30px;
+            text-align: center;
+            min-width: 180px;
+        }
+
+        .scheme-box-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .scheme-box-sub {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .scheme-arrows {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .scheme-arrow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-medium);
+            padding: 10px 15px;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .scheme-arrow-icon {
+            font-size: 18px;
+        }
+
+        /* 強調テキスト */
+        .text-accent {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .text-primary {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .text-large {
+            font-size: 24px;
+        }
+
+        /* リスト */
+        ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: var(--text-medium);
+        }
+
+        /* フッター */
+        .slide-footer {
+            position: absolute;
+            bottom: 20px;
+            left: 60px;
+            right: 60px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        /* 最終ページ */
+        .slide-end {
+            background: var(--gradient-ocean);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .slide-end h2 {
+            color: var(--white);
+            border-bottom: none;
+            font-size: 32px;
+        }
+
+        .contact-info {
+            margin-top: 40px;
+            padding: 30px 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .contact-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .contact-label {
+            opacity: 0.7;
+        }
+
+        .tagline {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-top: 40px;
+            font-style: italic;
+        }
+
+        /* 印刷用 */
+        @media print {
+            body {
+                background: none;
+            }
+            .slide {
+                box-shadow: none;
+                margin: 0;
+                border-radius: 0;
+                page-break-after: always;
+                min-height: 100vh;
+            }
+        }
+
+        /* Win-Win図 */
+        .winwin-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .winwin-table {
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .winwin-table th {
+            background: var(--primary);
+            text-align: center;
+            padding: 15px;
+        }
+
+        .winwin-table td {
+            padding: 20px 30px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- スライド1: 表紙 -->
+    <div class="slide slide-cover">
+        <h1>業務提携のご提案</h1>
+        <p class="subtitle">相互送客パートナーシップのご案内</p>
+        <p class="company-names">ウェブスキ × UNISIA</p>
+        <p class="date">2026年4月</p>
+        <p class="from">株式会社UNISIA（ユニシア）</p>
+    </div>
+
+    <!-- スライド2: 目次 -->
+    <div class="slide">
+        <p class="section-number">Contents</p>
+        <h2>目次</h2>
+        
+        <table>
+            <tr>
+                <td style="width: 60px; text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">01</td>
+                <td>ご提案の背景</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">02</td>
+                <td>貴社MVVとの整合性</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">03</td>
+                <td>株式会社UNISIAについて</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">04</td>
+                <td>提携スキーム</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">05</td>
+                <td>紹介フロー</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">06</td>
+                <td>インセンティブ条件</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">07</td>
+                <td>貴社のメリット</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-family: Montserrat; font-weight: 600; color: var(--accent);">08</td>
+                <td>想定効果</td>
+            </tr>
+        </table>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>2 / 11</span>
+        </div>
+    </div>
+
+    <!-- スライド3: ご提案の背景 -->
+    <div class="slide">
+        <p class="section-number">Section 01</p>
+        <h2>ご提案の背景</h2>
+
+        <h3>共通するお客様像</h3>
+        <p>ウェブスキ様とUNISIAは、<span class="text-accent">「自由なライフスタイルを実現したい」</span>という共通の想いを持つお客様にサービスを提供しています。</p>
+
+        <div class="winwin-container">
+            <table class="winwin-table" style="width: 80%;">
+                <tr>
+                    <th style="width: 50%;">ウェブスキ</th>
+                    <th style="width: 50%;">UNISIA</th>
+                </tr>
+                <tr>
+                    <td>WEBスキルで<br><strong>場所に縛られない働き方</strong></td>
+                    <td>海外挑戦で<br><strong>人生の選択肢を広げる</strong></td>
+                </tr>
+                <tr>
+                    <td>フリーランスとして独立</td>
+                    <td>留学・ワーホリ・海外旅行</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="box box-accent">
+            <h3 style="margin-top: 0;">貴社の課題</h3>
+            <p style="text-align: center; font-size: 18px; margin-bottom: 15px;">
+                <strong style="color: var(--primary);">営業マンのインセンティブ低下 → 離脱リスク</strong>
+            </p>
+            <ul>
+                <li>入会に至らなかった面談は<strong>成果ゼロ</strong>となり、営業マンのモチベーションが低下</li>
+                <li>月73件の「見込み外」顧客 = <strong>営業マンにとって「無駄な労力」</strong>と感じる原因に</li>
+                <li>インセンティブが入会成約のみに依存 → <strong>収入の不安定さ</strong>が離脱を招く</li>
+            </ul>
+        </div>
+
+        <div class="box box-primary">
+            <h3 style="margin-top: 0;">本提携による解決策</h3>
+            <ul>
+                <li>入会しなかった顧客も<strong>UNISIA紹介で収益化</strong> → 「無駄な面談」がなくなる</li>
+                <li>1件紹介につき<strong>4,400円〜8,800円のショット報酬</strong>を営業マンへ還元可能</li>
+                <li>営業マンの<strong>収入源が増加</strong> → 離脱防止・モチベーション向上</li>
+            </ul>
+            <p style="text-align: center; margin-top: 20px; margin-bottom: 0;"><span class="text-accent text-large">→ 「入会しなくても稼げる」新たな収益機会</span></p>
+        </div>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>3 / 12</span>
+        </div>
+    </div>
+
+    <!-- スライド3.5: 貴社MVVとの整合性 -->
+    <div class="slide">
+        <p class="section-number">Section 01</p>
+        <h2>貴社MVVとの整合性</h2>
+
+        <p style="text-align: center; margin-bottom: 30px;">本提携は、ウェブスキ様の<strong>ミッション・ビジョン・バリュー</strong>とも深く合致しています。</p>
+
+        <div class="box box-accent" style="margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: var(--primary);">ミッション「人生の主人公になれるキッカケを提供する」</h3>
+            <p style="margin-bottom: 0;">
+                WEBスキルだけでなく、<strong>海外挑戦という選択肢</strong>を提示することで、より多くの方に「人生の主人公になれるキッカケ」を届けられます。入会に至らなかった方にも、<strong>別の形で夢への一歩</strong>を踏み出す機会を提供できます。
+            </p>
+        </div>
+
+        <div class="box box-primary" style="margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: var(--primary);">ビジョン「夢や目標がないことが恥ずかしいという文化を作る」</h3>
+            <p style="margin-bottom: 0;">
+                海外経験は<strong>新しい夢や目標を見つけるきっかけ</strong>になります。「WEBは違ったけど、海外で何かを見つけたい」という方の夢を応援することで、貴社のビジョン実現に貢献します。
+            </p>
+        </div>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>4 / 12</span>
+        </div>
+    </div>
+
+    <!-- スライド4: UNISIAについて -->
+    <div class="slide">
+        <p class="section-number">Section 02</p>
+        <h2>株式会社UNISIAについて</h2>
+
+        <table>
+            <tr>
+                <th style="width: 150px;">項目</th>
+                <th>内容</th>
+            </tr>
+            <tr>
+                <td>社名</td>
+                <td>株式会社UNISIA（ユニシア）</td>
+            </tr>
+            <tr>
+                <td>設立</td>
+                <td>2025年8月</td>
+            </tr>
+            <tr>
+                <td>所在地</td>
+                <td>福岡県福岡市博多区博多駅前1丁目23番2号</td>
+            </tr>
+            <tr>
+                <td>事業内容</td>
+                <td>海外留学支援事業、海外旅行サポート事業、英会話教育事業</td>
+            </tr>
+            <tr>
+                <td>代表取締役</td>
+                <td>井上 智羅（いのうえ とらい）</td>
+            </tr>
+        </table>
+
+        <div class="box box-primary">
+            <h3 style="margin-top: 0;">Mission</h3>
+            <p style="font-size: 18px; text-align: center; margin-bottom: 0;">
+                <strong style="font-family: Montserrat;">"Unleash Potential from Asia."</strong><br>
+                <span style="color: var(--text-light);">アジアから、すべての人の可能性を解き放つ</span>
+            </p>
+        </div>
+
+        <h3>サービス：フラットサポート</h3>
+        <p><span class="text-accent">業界初のサブスクリプション型</span> 海外挑戦支援サービス</p>
+
+        <table>
+            <tr>
+                <th>プラン</th>
+                <th>月額（税込）</th>
+                <th>主なサービス</th>
+            </tr>
+            <tr>
+                <td>アドバンスプラン</td>
+                <td>8,800円</td>
+                <td>航空券手配、海外保険案内、就職斡旋、現地サポート</td>
+            </tr>
+            <tr>
+                <td>プレミアムプラン</td>
+                <td>19,800円</td>
+                <td>全サービス + ビザ申請代行 + 月4回オンライン英会話</td>
+            </tr>
+        </table>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>5 / 11</span>
+        </div>
+    </div>
+
+    <!-- スライド5: UNISIAの強み -->
+    <div class="slide">
+        <p class="section-number">Section 02</p>
+        <h2>UNISIAの強み</h2>
+
+        <h3>提供サポート（全10項目）</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">01</span> 空港送迎手配
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">02</span> 航空券の手配（大幅割引）
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">03</span> ビザ発行代行
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">04</span> 海外現地撮影
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">05</span> 海外保険案内
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">06</span> ツアーガイド
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">07</span> 帰国後就職斡旋
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">08</span> 現地日本語サポート
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">09</span> 24時間LINEサポート
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-light); border-radius: 6px;">
+                <span style="color: var(--accent); font-weight: bold;">10</span> オンライン英会話
+            </div>
+        </div>
+
+        <h3>競合優位性：大手比65%以上のコスト削減</h3>
+        <table>
+            <tr>
+                <th>比較項目</th>
+                <th>大手他社</th>
+                <th>UNISIA</th>
+                <th style="background: var(--accent);">差額</th>
+            </tr>
+            <tr class="highlight-row">
+                <td>6ヶ月留学費用</td>
+                <td>約190万円〜</td>
+                <td>65万円〜</td>
+                <td><strong style="color: var(--accent);">約125万円お得</strong></td>
+            </tr>
+            <tr class="highlight-row">
+                <td>航空券（日本⇄イギリス）</td>
+                <td>約33万円</td>
+                <td>約11万円</td>
+                <td><strong style="color: var(--accent);">約22万円お得</strong></td>
+            </tr>
+        </table>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>6 / 11</span>
+        </div>
+    </div>
+
+    <!-- スライド6: 提携スキーム -->
+    <div class="slide">
+        <p class="section-number">Section 03</p>
+        <h2>提携スキーム</h2>
+
+        <h3>相互送客パートナーシップ</h3>
+
+        <div class="scheme-container">
+            <div class="scheme-box">
+                <div class="scheme-box-title">ウェブスキ</div>
+                <div class="scheme-box-sub">WEBスキル習得</div>
+            </div>
+
+            <div class="scheme-arrows">
+                <div class="scheme-arrow">
+                    <span class="scheme-arrow-icon">→</span>
+                    <span>海外/旅行ニーズのある方</span>
+                </div>
+                <div class="scheme-arrow">
+                    <span class="scheme-arrow-icon">←</span>
+                    <span>フリーランス志望の方</span>
+                </div>
+            </div>
+
+            <div class="scheme-box">
+                <div class="scheme-box-title">UNISIA</div>
+                <div class="scheme-box-sub">留学・旅行支援</div>
+            </div>
+        </div>
+
+        <h3>紹介対象者</h3>
+        <table>
+            <tr>
+                <th style="width: 80px;">方向</th>
+                <th>紹介元</th>
+                <th>紹介先</th>
+                <th>対象者</th>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-weight: bold; color: var(--accent);">A</td>
+                <td>ウェブスキ</td>
+                <td>UNISIA</td>
+                <td>ご入会に至らなかったお客様のうち、<strong>海外・旅行ニーズ</strong>をお持ちの方</td>
+            </tr>
+            <tr>
+                <td style="text-align: center; font-weight: bold; color: var(--sky-blue);">B</td>
+                <td>UNISIA</td>
+                <td>ウェブスキ</td>
+                <td>留学・ワーホリ経験者で、<strong>フリーランスを目指す方</strong></td>
+            </tr>
+        </table>
+
+        <div class="box box-accent" style="text-align: center;">
+            <p style="margin: 0; font-size: 16px;"><strong>双方向の紹介でWin-Winの関係を構築</strong></p>
+        </div>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>7 / 11</span>
+        </div>
+    </div>
+
+    <!-- スライド7: 紹介フロー -->
+    <div class="slide">
+        <p class="section-number">Section 04</p>
+        <h2>紹介フロー</h2>
+
+        <h3>ウェブスキ → UNISIA の場合</h3>
+
+        <div class="flow-diagram">
+            <div class="flow-step">
+                <div class="flow-step-number">1</div>
+                <div class="flow-step-text">面談実施<br>（ウェブスキ）</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <div class="flow-step-number">2</div>
+                <div class="flow-step-text">入会見送り<br>海外ニーズ確認</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <div class="flow-step-number">3</div>
+                <div class="flow-step-text">専用フォーム<br>から紹介</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <div class="flow-step-number">4</div>
+                <div class="flow-step-text">UNISIA<br>LINE登録</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <div class="flow-step-number">5</div>
+                <div class="flow-step-text">無料相談<br>→ご入会</div>
+            </div>
+        </div>
+
+        <h3>紹介時の詳細フロー</h3>
+        <table>
+            <tr>
+                <th style="width: 100px;">ステップ</th>
+                <th>内容</th>
+                <th>担当</th>
+            </tr>
+            <tr>
+                <td>1. 面談時</td>
+                <td>お客様のニーズをヒアリング</td>
+                <td>ウェブスキ営業担当者</td>
+            </tr>
+            <tr>
+                <td>2. ニーズ確認</td>
+                <td>「海外に行きたい」「旅行をたくさんしたい」等のご要望を確認</td>
+                <td>ウェブスキ営業担当者</td>
+            </tr>
+            <tr>
+                <td>3. 紹介</td>
+                <td>専用フォームからお客様情報を送信</td>
+                <td>ウェブスキ営業担当者</td>
+            </tr>
+            <tr>
+                <td>4. LINE案内</td>
+                <td>お客様にUNISIA公式LINEをご案内</td>
+                <td>ウェブスキ営業担当者</td>
+            </tr>
+            <tr>
+                <td>5. 無料相談</td>
+                <td>UNISIAにて無料相談を実施</td>
+                <td>UNISIA</td>
+            </tr>
+            <tr>
+                <td>6. ご入会</td>
+                <td>条件が合えばサービス開始</td>
+                <td>UNISIA</td>
+            </tr>
+        </table>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>8 / 11</span>
+        </div>
+    </div>
+
+    <!-- スライド8: インセンティブ条件 -->
+    <div class="slide">
+        <p class="section-number">Section 05</p>
+        <h2>インセンティブ条件</h2>
+
+        <h3>紹介報酬</h3>
+        
+        <table>
+            <tr>
+                <th style="width: 150px;">項目</th>
+                <th>内容</th>
+            </tr>
+            <tr class="highlight-row">
+                <td><strong>報酬額</strong></td>
+                <td>1件成約につき <span class="text-accent" style="font-size: 20px;">4,400円〜8,800円</span></td>
+            </tr>
+            <tr>
+                <td>支払条件</td>
+                <td>紹介されたお客様が <strong>2ヶ月以上継続</strong> した場合</td>
+            </tr>
+            <tr>
+                <td>支払時期</td>
+                <td>2ヶ月目にショットで1回お支払い</td>
+            </tr>
+        </table>
+
+        <h3>報酬例（ウェブスキ → UNISIA）</h3>
+        <table>
+            <tr>
+                <th>お客様のプラン</th>
+                <th>月額</th>
+                <th style="background: var(--accent);">紹介報酬</th>
+            </tr>
+            <tr>
+                <td>アドバンスプラン</td>
+                <td>8,800円</td>
+                <td><strong style="color: var(--accent); font-size: 20px;">4,400円</strong></td>
+            </tr>
+            <tr>
+                <td>プレミアムプラン</td>
+                <td>19,800円</td>
+                <td><strong style="color: var(--accent); font-size: 20px;">8,800円</strong></td>
+            </tr>
+        </table>
+
+        <div class="box box-accent">
+            <h3 style="margin-top: 0;">営業マンの収入シミュレーション</h3>
+            <p style="margin-bottom: 10px;">例：月5件成約の場合</p>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 30px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 12px; color: var(--text-light);">アドバンスプラン × 5件</div>
+                    <div style="font-size: 28px; font-weight: bold; color: var(--accent);">22,000円</div>
+                </div>
+                <div style="text-align: center; padding: 0 20px; border-left: 1px solid rgba(0,0,0,0.1); border-right: 1px solid rgba(0,0,0,0.1);">
+                    <div style="font-size: 12px; color: var(--text-light);">プレミアムプラン × 5件</div>
+                    <div style="font-size: 28px; font-weight: bold; color: var(--accent);">44,000円</div>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 15px; margin-bottom: 0; font-size: 13px;">
+                <strong>「入会しなかった顧客」からも収益が生まれる仕組み</strong>
+            </p>
+        </div>
+
+        <div class="box box-primary">
+            <h3 style="margin-top: 0;">UNISIA → ウェブスキ の場合</h3>
+            <p style="margin-bottom: 0;">貴社プラン料金に対して<strong>同等の報酬体系</strong>を適用いたします（詳細は別途ご相談）</p>
+        </div>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>9 / 11</span>
+        </div>
+    </div>
+
+    <!-- スライド9: 貴社のメリット -->
+    <div class="slide">
+        <p class="section-number">Section 06</p>
+        <h2>貴社のメリット</h2>
+
+        <div class="box box-accent" style="margin-bottom: 25px;">
+            <p style="text-align: center; margin: 0; font-size: 18px;">
+                <strong>最大の課題「営業マンの離脱」を本提携で解決</strong>
+            </p>
+        </div>
+
+        <div class="merit-grid">
+            <div class="merit-card" style="border: 2px solid var(--accent);">
+                <div class="merit-icon" style="background: var(--gradient-sunset);">💰</div>
+                <div class="merit-title" style="font-size: 17px;">営業マンの収入源が増加</div>
+                <div class="merit-desc">
+                    入会しなかった顧客も<strong>紹介で収益化</strong>できるため、営業マンの収入源が増加。1件あたり<strong>4,400円〜8,800円</strong>のショット報酬で「頑張った分だけ稼げる」環境を構築。<strong>離脱の最大原因を解消</strong>します。
+                </div>
+            </div>
+            <div class="merit-card" style="border: 2px solid var(--accent);">
+                <div class="merit-icon" style="background: var(--gradient-sunset);">📈</div>
+                <div class="merit-title" style="font-size: 17px;">「無駄な面談」がゼロに</div>
+                <div class="merit-desc">
+                    月73件の「見込み外」顧客が<strong>すべて収益機会</strong>に変わる。「入会しなくても成果になる」という認識が営業マンの<strong>モチベーション向上</strong>に直結。面談1件1件に価値が生まれます。
+                </div>
+            </div>
+            <div class="merit-card">
+                <div class="merit-icon">💡</div>
+                <div class="merit-title">顧客満足度の向上</div>
+                <div class="merit-desc">
+                    入会に至らなかったお客様にも<strong>価値ある選択肢</strong>をご提案。「何も得られなかった」ではなく「別の道を紹介してもらえた」という体験が<strong>貴社ブランドの信頼向上</strong>に繋がります。
+                </div>
+            </div>
+            <div class="merit-card">
+                <div class="merit-icon">🌏</div>
+                <div class="merit-title">新規顧客の獲得</div>
+                <div class="merit-desc">
+                    UNISIAから<strong>月3〜5件</strong>の留学・ワーホリ経験者を紹介。海外経験者は「場所に縛られない働き方」への関心が高く、<strong>成約率の高いリード</strong>が期待できます。
+                </div>
+            </div>
+        </div>
+
+        <div class="box box-primary" style="margin-top: 25px;">
+            <div style="display: flex; justify-content: space-around; text-align: center;">
+                <div>
+                    <div style="font-size: 32px; font-weight: bold; color: var(--primary);">0円</div>
+                    <div style="font-size: 12px; color: var(--text-light);">初期費用・固定費</div>
+                </div>
+                <div>
+                    <div style="font-size: 32px; font-weight: bold; color: var(--accent);">100%</div>
+                    <div style="font-size: 12px; color: var(--text-light);">成果報酬型</div>
+                </div>
+                <div>
+                    <div style="font-size: 32px; font-weight: bold; color: var(--sky-blue);">0</div>
+                    <div style="font-size: 12px; color: var(--text-light);">リスク</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>10 / 11</span>
+        </div>
+    </div>
+
+    <!-- スライド10: 想定効果 -->
+    <div class="slide">
+        <p class="section-number">Section 07</p>
+        <h2>想定効果</h2>
+
+        <h3>試算条件（貴社データより）</h3>
+        <table>
+            <tr>
+                <th style="width: 250px;">項目</th>
+                <th>数値</th>
+            </tr>
+            <tr>
+                <td>月間面談数</td>
+                <td>88件</td>
+            </tr>
+            <tr>
+                <td>ご入会に至らなかった件数</td>
+                <td>73件</td>
+            </tr>
+            <tr>
+                <td>うち海外ニーズあり（想定40%）</td>
+                <td><strong>約29件/月</strong></td>
+            </tr>
+            <tr>
+                <td>2ヶ月継続率（想定70%）</td>
+                <td><strong>約20件/月</strong></td>
+            </tr>
+        </table>
+
+        <h3>想定月間収益</h3>
+        <table>
+            <tr>
+                <th>シナリオ</th>
+                <th>成約数</th>
+                <th>平均報酬単価</th>
+                <th style="background: var(--accent);">月間収益</th>
+            </tr>
+            <tr>
+                <td>控えめ</td>
+                <td>10件/月</td>
+                <td>4,400円</td>
+                <td><strong>44,000円</strong></td>
+            </tr>
+            <tr class="highlight-row">
+                <td>標準</td>
+                <td>20件/月</td>
+                <td>4,400円</td>
+                <td><strong style="color: var(--accent);">88,000円</strong></td>
+            </tr>
+            <tr>
+                <td>積極的</td>
+                <td>29件/月</td>
+                <td>6,600円</td>
+                <td><strong>191,400円</strong></td>
+            </tr>
+        </table>
+
+        <div class="box box-accent">
+            <h3 style="margin-top: 0; text-align: center;">年間想定収益</h3>
+            <div style="display: flex; justify-content: space-around; text-align: center; margin-top: 20px;">
+                <div>
+                    <div style="font-size: 12px; color: var(--text-light);">控えめ</div>
+                    <div style="font-size: 24px; font-weight: bold; color: var(--primary);">約53万円</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: var(--text-light);">標準</div>
+                    <div style="font-size: 28px; font-weight: bold; color: var(--accent);">約106万円</div>
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: var(--text-light);">積極的</div>
+                    <div style="font-size: 24px; font-weight: bold; color: var(--primary);">約230万円</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px;">UNISIA → ウェブスキ の想定送客</h3>
+        <table>
+            <tr>
+                <th style="width: 200px;">項目</th>
+                <th>数値</th>
+            </tr>
+            <tr>
+                <td>月間送客数（想定）</td>
+                <td><strong>3〜5件/月</strong></td>
+            </tr>
+            <tr>
+                <td>年間送客数</td>
+                <td><strong>36〜60件/年</strong></td>
+            </tr>
+        </table>
+        <div class="box box-primary" style="margin-top: 15px;">
+            <p style="margin: 0; text-align: center; font-size: 14px;">
+                留学・ワーホリ経験者で<strong>フリーランス志望</strong>の方を毎月ご紹介<br>
+                <span style="color: var(--text-light); font-size: 12px;">※海外経験者は「場所に縛られない働き方」への関心が高く、質の高いリードが期待できます</span>
+            </p>
+        </div>
+
+        <div class="slide-footer">
+            <span>株式会社UNISIA</span>
+            <span>11 / 11</span>
+        </div>
+    </div>
+
+
+</body>
+</html>

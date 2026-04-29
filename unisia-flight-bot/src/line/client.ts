@@ -3,9 +3,13 @@ import { MiddlewareConfig, messagingApi } from '@line/bot-sdk';
 const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
 const channelSecret = process.env.LINE_CHANNEL_SECRET;
 
-if (!channelAccessToken || !channelSecret) {
-  console.warn('⚠️ LINE credentials not configured');
+if (!channelAccessToken) {
+  console.error('❌ LINE_CHANNEL_ACCESS_TOKEN is not set!');
 }
+if (!channelSecret) {
+  console.warn('⚠️ LINE_CHANNEL_SECRET is not set');
+}
+console.log(`🔧 LINE config: token=${channelAccessToken ? 'SET' : 'NOT SET'}, secret=${channelSecret ? 'SET' : 'NOT SET'}`);
 
 export function isLineConfigured(): boolean {
   return !!(channelAccessToken && channelSecret);
