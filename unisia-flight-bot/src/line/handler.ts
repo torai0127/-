@@ -19,8 +19,8 @@ import {
   compareFlightPrices, 
   formatComparisonResultForLine,
   formatSimpleResultForLine,
+  isAnyApiAvailable,
 } from '../flight/price-comparator.js';
-import { isSkyscannerApiAvailable } from '../flight/skyscanner-api.js';
 
 interface UserState {
   step: 'idle' | 'survey_region' | 'survey_airport' | 'survey_period' | 'survey_budget' | 'survey_purpose' | 'survey_goals' | 'flight_search';
@@ -574,9 +574,9 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     cabinClass: 'economy' as const,
   };
   
-  // Skyscanner APIが利用可能な場合は価格比較を実行
-  if (isSkyscannerApiAvailable()) {
-    console.log('🔍 Starting price comparison with Skyscanner API...');
+  // いずれかのAPIが利用可能な場合は内部比較を実行
+  if (isAnyApiAvailable()) {
+    console.log('🔍 Starting multi-API price comparison...');
     
     try {
       const comparisonResult = await compareFlightPrices(searchParams);
@@ -587,7 +587,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     }
   }
   
-  // APIが利用不可の場合はシンプルな結果（リンクのみ）を返す
+  // APIが利用不可の場合はGoogle Flightsリンクのみ返す
   return formatSimpleResultForLine(searchParams);
 }
 
