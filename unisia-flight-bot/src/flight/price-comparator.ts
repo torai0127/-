@@ -285,8 +285,8 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
   
   // 市場相場と最安値を表示
   if (cheapest && cheapest.price) {
-    // 市場相場 = 最安値の約1.3倍（一般的な予約サイトの相場として）
-    const marketPrice = Math.round(cheapest.price * 1.3 / 1000) * 1000;
+    // 市場相場 = 最安値の約1.4倍 + ¥5,000（店舗型旅行会社の相場ベース）
+    const marketPrice = Math.round((cheapest.price * 1.4 + 5000) / 1000) * 1000;
     const marketPriceFormatted = `¥${marketPrice.toLocaleString()}`;
     const savings = marketPrice - cheapest.price;
     const savingsFormatted = `¥${savings.toLocaleString()}`;
@@ -295,7 +295,7 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
     response += `📊 価格比較\n`;
     response += `━━━━━━━━━━━━━━━\n\n`;
     response += `💴 市場相場: ${marketPriceFormatted}〜\n`;
-    response += `💎 最安値: ${cheapest.priceFormatted}〜\n`;
+    response += `💎 当サイト最安値: ${cheapest.priceFormatted}〜\n`;
     response += `🎉 最大 ${savingsFormatted} お得！\n\n`;
   }
   
