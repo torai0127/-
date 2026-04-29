@@ -309,6 +309,7 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
   console.log(`📩 Flight Bot received from ${userId}: ${userMessage.substring(0, 50)}...`);
 
   try {
+    console.log('📝 Processing message...');
     const user = getOrCreateUser(userId);
     const state = getUserState(userId);
     
@@ -316,11 +317,14 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     
     // リッチメニューから「航空券」とだけ送られた場合 → テンプレート表示
     if (isFlightTemplateRequest(userMessage)) {
+      console.log('📋 Template request detected');
       response = getFlightSearchTemplate();
     }
     // エルメからの航空券検索フォーム（全ての条件が揃っている場合）
     else if (isCompleteFlightRequest(userMessage)) {
+      console.log('✈️ Complete flight request detected');
       response = await handleFlightQuery(userId, userMessage);
+      console.log('📤 Flight response ready:', response.substring(0, 100) + '...');
     } else if (userMessage === 'アンケート' || userMessage === '登録') {
       setUserState(userId, { step: 'survey_region', surveyData: {} });
       response = SURVEY_PROMPTS.welcome;
@@ -341,22 +345,33 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       timestamp: new Date().toISOString(),
     });
 
-    await lineClient.replyMessage({
-      replyToken: messageEvent.replyToken,
-      messages: [{ type: 'text', text: response }],
-    });
-
-    console.log(`📤 Replied to ${userId}`);
-  } catch (error) {
-    console.error('Error handling message:', error);
+    console.log(`📤 Sending reply to ${userId}...`);
+    console.log(`📄 Response length: ${response.length} chars`);
     
-    await lineClient.replyMessage({
-      replyToken: messageEvent.replyToken,
-      messages: [{
-        type: 'text',
-        text: '申し訳ございません。エラーが発生しました。\nしばらくしてから再度お試しください。',
-      }],
-    });
+    try {
+      await lineClient.replyMessage({
+        replyToken: messageEvent.replyToken,
+        messages: [{ type: 'text', text: response }],
+      });
+      console.log(`✅ Reply sent successfully to ${userId}`);
+    } catch (replyError) {
+      console.error('❌ Failed to send reply:', replyError);
+      throw replyError;
+    }
+  } catch (error) {
+    console.error('❌ Error handling message:', error);
+    
+    try {
+      await lineClient.replyMessage({
+        replyToken: messageEvent.replyToken,
+        messages: [{
+          type: 'text',
+          text: '申し訳ございません。エラーが発生しました。\nしばらくしてから再度お試しください。',
+        }],
+      });
+    } catch (e) {
+      console.error('❌ Failed to send error message:', e);
+    }
   }
 }
 
@@ -476,11 +491,20 @@ async function handleSafetyQuery(message: string): Promise<string> {
 }
 
 async function handleFlightQuery(userId: string, message: string): Promise<string> {
+  console.log('🔍 handleFlightQuery started');
+  
   // まず直接テキストから情報を抽出を試みる
   const directParams = extractFlightParamsFromText(message);
+  console.log('📋 Direct params:', JSON.stringify(directParams));
   
-  // OpenAIでも抽出を試みる
-  const aiParams = await extractFlightParams(message);
+  // OpenAIでも抽出を試みる（失敗してもdirectParamsで続行）
+  let aiParams: any = {};
+  try {
+    aiParams = await extractFlightParams(message);
+    console.log('🤖 AI params:', JSON.stringify(aiParams));
+  } catch (error) {
+    console.warn('⚠️ OpenAI extraction failed, using direct params only:', error);
+  }
   
   // 両方をマージ（directParamsを優先）
   const params = {
@@ -489,6 +513,7 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     destination: directParams.destination || aiParams?.destination,
     origin: directParams.origin || aiParams?.origin,
   };
+  console.log('📦 Merged params:', JSON.stringify(params));
   
   const surveyData = getSurveyResponse(userId);
   
