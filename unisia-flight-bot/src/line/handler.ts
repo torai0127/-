@@ -26,7 +26,7 @@ import {
   formatHotelResultForLine,
   HotelSearchParams,
   isHotelApiAvailable,
-} from '../hotel/travelpayouts-hotels.js';
+} from '../hotel/booking-api.js';
 import {
   extractHotelParams,
   createHotelContextFromFlight,
