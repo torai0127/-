@@ -1,11 +1,16 @@
 /**
- * 複数APIを内部で比較し、最安値1件のみを返す
+ * 複数サイトを内部で比較し、最安値1件のみを返す
  * 
  * 比較対象:
- * - Kiwi.com API（複数OTA・航空会社を集約）
- * - Skyscanner API（複数予約サイトの価格を集約）
+ * - スカイチケット
+ * - Trip.com
+ * - トラベルコ
+ * - エアトリ
+ * - Aviasales API
+ * - Kiwi.com API
+ * - Skyscanner API
  * 
- * 荷物（20kg）込みの総額で比較
+ * 最安値のサイトのリンクのみを表示
  */
 
 import { 
@@ -17,6 +22,7 @@ import { searchKiwi, isKiwiApiAvailable, KiwiFlightResult } from './kiwi-api.js'
 import { searchAviasales, isAviasalesApiAvailable, AviasalesFlightResult } from './aviasales-api.js';
 import { MultiSiteSearchParams } from './multi-site-search.js';
 import { generateGoogleFlightsQueryUrl, FlightSearchParams } from './google-flights.js';
+import { scrapeAllSites, normalizeAirportCode } from './scrapers/index.js';
 
 export interface CheapestResult {
   source: 'kiwi' | 'skyscanner' | 'aviasales' | 'google';
@@ -69,7 +75,18 @@ function toKiwiCabinClass(cabinClass?: string): 'M' | 'W' | 'C' | 'F' {
 }
 
 /**
- * 複数APIから価格を取得し、内部で比較して最安値1件のみを返す
+ * 複数サイトから価格を取得し、内部で比較して最安値1件のみを返す
+ * 
+ * スクレイピング対象:
+ * - スカイチケット
+ * - Trip.com
+ * - トラベルコ
+ * - エアトリ
+ * 
+ * API対象:
+ * - Aviasales
+ * - Kiwi.com
+ * - Skyscanner
  */
 export async function compareFlightPrices(params: MultiSiteSearchParams): Promise<FlightComparisonResult> {
   const flightParams: FlightSearchParams = {
@@ -90,10 +107,49 @@ export async function compareFlightPrices(params: MultiSiteSearchParams): Promis
   const sourcesChecked: string[] = [];
   const errors: string[] = [];
   
-  console.log('🔍 Starting multi-source price comparison...');
+  console.log('🔍 Starting multi-source price comparison (APIs + Scraping)...');
   
-  // 並列でAPI検索を実行
+  // 並列で検索を実行
   const searchPromises: Promise<void>[] = [];
+  
+  // === スクレイピング（複数サイト並列） ===
+  searchPromises.push(
+    scrapeAllSites({
+      origin: normalizeAirportCode(params.origin),
+      destination: normalizeAirportCode(params.destination),
+      departureDate: params.departureDate,
+      returnDate: params.returnDate,
+      adults: params.adults || 1,
+      children: params.children,
+      cabinClass: params.cabinClass,
+    }).then((result) => {
+      sourcesChecked.push(...result.sourcesChecked);
+      errors.push(...result.errors);
+      
+      // 成功した結果を候補に追加
+      for (const r of result.allResults) {
+        if (r.success && r.price) {
+          candidates.push({
+            source: r.source.toLowerCase().replace(/\./g, '').replace(/\s/g, '') as any,
+            price: r.price,
+            priceFormatted: r.priceFormatted || `¥${r.price.toLocaleString()}`,
+            totalWithBaggage: r.price,
+            totalWithBaggageFormatted: r.priceFormatted || `¥${r.price.toLocaleString()}`,
+            baggageIncluded: false,
+            baggageNote: '⚠️ 受託手荷物は別途料金の可能性あり',
+            deepLink: r.deepLink || '',
+            airlines: r.airline ? [r.airline] : [],
+            stops: 0,
+          });
+        }
+      }
+    }).catch((error) => {
+      console.error('Scraping error:', error);
+      errors.push(`Scraping: ${error.message || 'Unknown error'}`);
+    })
+  );
+  
+  // === API検索 ===
   
   // Kiwi.com API
   if (isKiwiApiAvailable()) {
@@ -182,45 +238,7 @@ export async function compareFlightPrices(params: MultiSiteSearchParams): Promis
     );
   }
   
-  // Aviasales API (Travelpayouts)
-  if (isAviasalesApiAvailable()) {
-    sourcesChecked.push('Aviasales');
-    searchPromises.push(
-      withTimeout(
-        searchAviasales({
-          origin: params.origin,
-          destination: params.destination,
-          departureDate: params.departureDate,
-          returnDate: params.returnDate,
-        }),
-        SEARCH_TIMEOUT_MS,
-        { success: false, error: 'Timeout' } as AviasalesFlightResult
-      ).then((result) => {
-        if (result.success && result.price) {
-          candidates.push({
-            source: 'aviasales',
-            price: result.price,
-            priceFormatted: result.priceFormatted || `¥${result.price.toLocaleString()}`,
-            totalWithBaggage: result.price,
-            totalWithBaggageFormatted: result.priceFormatted || `¥${result.price.toLocaleString()}`,
-            baggageIncluded: false,
-            baggageNote: '⚠️ 受託手荷物は別途料金の可能性あり',
-            deepLink: result.deepLink || '',
-            airlines: result.airline ? [result.airline] : [],
-            duration: result.duration ? `${Math.floor(result.duration / 60)}時間${result.duration % 60}分` : undefined,
-            stops: result.transfers || 0,
-            departureTime: result.departureTime,
-            arrivalTime: result.arrivalTime,
-          });
-          console.log(`✅ Aviasales: ¥${result.price.toLocaleString()}`);
-        } else if (result.error) {
-          errors.push(`Aviasales: ${result.error}`);
-        }
-      })
-    );
-  }
-  
-  // 全API検索を待機
+  // 全検索を待機
   await Promise.all(searchPromises);
   
   // 最安値を選定（荷物込み総額で比較）
@@ -299,9 +317,13 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
     response += `🎉 最大 ${savingsFormatted} お得！\n\n`;
   }
   
-  // 予約リンク
+  // 予約リンク（最安値のサイトのリンクを表示、なければGoogle Flights）
+  const bookingUrl = (cheapest?.deepLink && cheapest.deepLink.length > 0) 
+    ? cheapest.deepLink 
+    : googleFlightsUrl;
+  
   response += `🔗 最安値で予約する\n`;
-  response += `${googleFlightsUrl}\n\n`;
+  response += `${bookingUrl}\n\n`;
   
   // お得に予約するコツ
   response += `━━━━━━━━━━━━━━━\n`;
@@ -371,8 +393,10 @@ export function formatSimpleResultForLine(params: MultiSiteSearchParams): string
 }
 
 /**
- * いずれかのAPIが利用可能かチェック
+ * 価格比較が利用可能かチェック
+ * スクレイピングは常に利用可能なのでtrueを返す
  */
 export function isAnyApiAvailable(): boolean {
-  return isKiwiApiAvailable() || isSkyscannerApiAvailable() || isAviasalesApiAvailable();
+  // スクレイピングは常に利用可能
+  return true;
 }
