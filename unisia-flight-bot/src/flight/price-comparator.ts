@@ -256,7 +256,8 @@ export async function compareFlightPrices(params: MultiSiteSearchParams): Promis
 /**
  * LINE応答用フォーマット
  * 
- * 最安値のリンクだけを表示（サイト名は非表示）
+ * Google Flightsを主軸に、参考価格があれば表示
+ * 顧客が最安値を確実に見つけられるようガイド
  */
 export function formatComparisonResultForLine(result: FlightComparisonResult): string {
   const { searchParams, cheapest, googleFlightsUrl } = result;
@@ -265,18 +266,6 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
   const formatDate = (dateStr: string) => {
     const [y, m, d] = dateStr.split('-');
     return `${parseInt(m)}/${parseInt(d)}`;
-  };
-  
-  // 時刻フォーマット
-  const formatTime = (timeStr?: string) => {
-    if (!timeStr) return '';
-    try {
-      const date = new Date(timeStr);
-      if (isNaN(date.getTime())) return '';
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    } catch {
-      return '';
-    }
   };
   
   const depDate = formatDate(searchParams.departureDate);
@@ -295,50 +284,32 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
   response += `📅 ${dateRange}\n`;
   response += `👥 ${paxStr}\n\n`;
   
-  // 最安値があればその情報のみ表示
-  if (cheapest && cheapest.deepLink) {
-    // 価格
-    response += `💰 ${cheapest.totalWithBaggageFormatted}〜 / 1名\n`;
-    response += `　 ${cheapest.baggageNote}\n\n`;
-    
-    // フライト詳細
-    if (cheapest.airlines && cheapest.airlines.length > 0) {
-      response += `✈️ ${cheapest.airlines.join(' / ')}\n`;
-    }
-    
-    const depTime = formatTime(cheapest.departureTime);
-    const arrTime = formatTime(cheapest.arrivalTime);
-    if (depTime && arrTime) {
-      response += `🕐 ${depTime} → ${arrTime}\n`;
-    }
-    
-    if (cheapest.duration) {
-      response += `⏱️ ${cheapest.duration}\n`;
-    }
-    
-    response += `🔄 ${cheapest.stops === 0 ? '直行便' : `乗継 ${cheapest.stops}回`}\n\n`;
-    
-    // 購入リンク
-    response += `🔗 予約はこちら\n`;
-    response += `${cheapest.deepLink}\n\n`;
-    
-    response += `💡 日付を変更すると、さらに安い便が見つかることも！`;
-    
-    return response;
+  // 参考価格があれば表示
+  if (cheapest && cheapest.price) {
+    response += `💰 参考価格: ${cheapest.priceFormatted}〜\n`;
+    response += `　 ※実際の価格は検索結果でご確認ください\n\n`;
   }
   
-  // APIから価格が取得できなかった場合はGoogle Flightsを表示
+  // Google Flightsを主軸として表示
   response += `🔗 航空券を検索\n`;
   response += `${googleFlightsUrl}\n\n`;
   
-  response += `💡 日付を変更すると、さらに安い便が見つかることも！\n`;
-  response += `💡 火・水曜出発が比較的安いことも多いです。`;
+  // お得に予約するコツ
+  response += `━━━━━━━━━━━━━━━\n`;
+  response += `💡 お得に予約するコツ\n`;
+  response += `━━━━━━━━━━━━━━━\n\n`;
+  response += `✅ 上のリンクで「日付グリッド」を確認\n`;
+  response += `　 → 前後の日で最安日が一目でわかります\n\n`;
+  response += `✅ 火・水曜出発が比較的安い傾向\n\n`;
+  response += `✅ 出発の1〜2ヶ月前が狙い目\n\n`;
+  response += `✅ LCCも含めて比較できます`;
   
   return response;
 }
 
 /**
- * シンプルな結果フォーマット（API未設定の場合）
+ * シンプルな結果フォーマット
+ * Google Flightsで400以上の航空会社・予約サイトを一括比較
  */
 export function formatSimpleResultForLine(params: MultiSiteSearchParams): string {
   const flightParams: FlightSearchParams = {
@@ -379,8 +350,15 @@ export function formatSimpleResultForLine(params: MultiSiteSearchParams): string
   response += `🔗 航空券を検索\n`;
   response += `${googleFlightsUrl}\n\n`;
   
-  response += `💡 日付を変更すると、さらに安い便が見つかることも！\n`;
-  response += `💡 火・水曜出発が比較的安いことも多いです。`;
+  // お得に予約するコツ
+  response += `━━━━━━━━━━━━━━━\n`;
+  response += `💡 お得に予約するコツ\n`;
+  response += `━━━━━━━━━━━━━━━\n\n`;
+  response += `✅ 上のリンクで「日付グリッド」を確認\n`;
+  response += `　 → 前後の日で最安日が一目でわかります\n\n`;
+  response += `✅ 火・水曜出発が比較的安い傾向\n\n`;
+  response += `✅ 出発の1〜2ヶ月前が狙い目\n\n`;
+  response += `✅ LCCも含めて比較できます`;
   
   return response;
 }
