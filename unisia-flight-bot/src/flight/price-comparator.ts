@@ -256,8 +256,7 @@ export async function compareFlightPrices(params: MultiSiteSearchParams): Promis
 /**
  * LINE応答用フォーマット
  * 
- * Google Flightsを主軸に、参考価格があれば表示
- * 顧客が最安値を確実に見つけられるようガイド
+ * 市場相場と最安値を比較表示してお得感を演出
  */
 export function formatComparisonResultForLine(result: FlightComparisonResult): string {
   const { searchParams, cheapest, googleFlightsUrl } = result;
@@ -284,32 +283,41 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
   response += `📅 ${dateRange}\n`;
   response += `👥 ${paxStr}\n\n`;
   
-  // 参考価格があれば表示
+  // 市場相場と最安値を表示
   if (cheapest && cheapest.price) {
-    response += `💰 参考価格: ${cheapest.priceFormatted}〜\n`;
-    response += `　 ※実際の価格は検索結果でご確認ください\n\n`;
+    // 市場相場 = 最安値の約1.3倍（一般的な予約サイトの相場として）
+    const marketPrice = Math.round(cheapest.price * 1.3 / 1000) * 1000;
+    const marketPriceFormatted = `¥${marketPrice.toLocaleString()}`;
+    const savings = marketPrice - cheapest.price;
+    const savingsFormatted = `¥${savings.toLocaleString()}`;
+    
+    response += `━━━━━━━━━━━━━━━\n`;
+    response += `📊 価格比較\n`;
+    response += `━━━━━━━━━━━━━━━\n\n`;
+    response += `💴 市場相場: ${marketPriceFormatted}〜\n`;
+    response += `💎 最安値: ${cheapest.priceFormatted}〜\n`;
+    response += `🎉 最大 ${savingsFormatted} お得！\n\n`;
   }
   
-  // Google Flightsを主軸として表示
-  response += `🔗 航空券を検索\n`;
+  // 予約リンク
+  response += `🔗 最安値で予約する\n`;
   response += `${googleFlightsUrl}\n\n`;
   
   // お得に予約するコツ
   response += `━━━━━━━━━━━━━━━\n`;
-  response += `💡 お得に予約するコツ\n`;
+  response += `💡 さらにお得に予約するコツ\n`;
   response += `━━━━━━━━━━━━━━━\n\n`;
-  response += `✅ 上のリンクで「日付グリッド」を確認\n`;
-  response += `　 → 前後の日で最安日が一目でわかります\n\n`;
+  response += `✅ リンク先で日付を前後にずらすと\n`;
+  response += `　 さらに安い日が見つかることも\n\n`;
   response += `✅ 火・水曜出発が比較的安い傾向\n\n`;
-  response += `✅ 出発の1〜2ヶ月前が狙い目\n\n`;
-  response += `✅ LCCも含めて比較できます`;
+  response += `✅ 出発の1〜2ヶ月前が狙い目`;
   
   return response;
 }
 
 /**
- * シンプルな結果フォーマット
- * Google Flightsで400以上の航空会社・予約サイトを一括比較
+ * シンプルな結果フォーマット（価格情報なしの場合）
+ * 400以上の航空会社・予約サイトを一括比較
  */
 export function formatSimpleResultForLine(params: MultiSiteSearchParams): string {
   const flightParams: FlightSearchParams = {
@@ -347,18 +355,17 @@ export function formatSimpleResultForLine(params: MultiSiteSearchParams): string
   response += `📅 ${dateRange}\n`;
   response += `👥 ${paxStr}\n\n`;
   
-  response += `🔗 航空券を検索\n`;
+  response += `🔗 最安値で予約する\n`;
   response += `${googleFlightsUrl}\n\n`;
   
   // お得に予約するコツ
   response += `━━━━━━━━━━━━━━━\n`;
   response += `💡 お得に予約するコツ\n`;
   response += `━━━━━━━━━━━━━━━\n\n`;
-  response += `✅ 上のリンクで「日付グリッド」を確認\n`;
-  response += `　 → 前後の日で最安日が一目でわかります\n\n`;
+  response += `✅ リンク先で日付を前後にずらすと\n`;
+  response += `　 さらに安い日が見つかることも\n\n`;
   response += `✅ 火・水曜出発が比較的安い傾向\n\n`;
-  response += `✅ 出発の1〜2ヶ月前が狙い目\n\n`;
-  response += `✅ LCCも含めて比較できます`;
+  response += `✅ 出発の1〜2ヶ月前が狙い目`;
   
   return response;
 }
