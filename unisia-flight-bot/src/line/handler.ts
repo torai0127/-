@@ -21,9 +21,22 @@ import {
   formatSimpleResultForLine,
   isAnyApiAvailable,
 } from '../flight/price-comparator.js';
+import {
+  searchCheapestHotel,
+  formatHotelResultForLine,
+  HotelSearchParams,
+  isHotelApiAvailable,
+} from '../hotel/travelpayouts-hotels.js';
+import {
+  extractHotelParams,
+  createHotelContextFromFlight,
+  generateHotelInputTemplate,
+  FlightContext,
+} from '../hotel/hotel-params.js';
+import { generateBookingComUrl } from '../hotel/hotel-deep-links.js';
 
 interface UserState {
-  step: 'idle' | 'survey_region' | 'survey_airport' | 'survey_period' | 'survey_budget' | 'survey_purpose' | 'survey_goals' | 'flight_search';
+  step: 'idle' | 'survey_region' | 'survey_airport' | 'survey_period' | 'survey_budget' | 'survey_purpose' | 'survey_goals' | 'flight_search' | 'hotel_ask' | 'hotel_search';
   surveyData?: {
     interestedRegions?: string[];
     departureAirports?: string[];
@@ -38,6 +51,8 @@ interface UserState {
     departureDate?: string;
     returnDate?: string;
   };
+  hotelContext?: FlightContext;
+  hotelSearchData?: Partial<HotelSearchParams>;
 }
 
 const userStates = new Map<string, UserState>();
@@ -184,6 +199,51 @@ function extractFlightParamsFromText(message: string): any {
 }
 
 /**
+ * メッセージからフライト検索コンテキストを抽出（ホテル検索用）
+ */
+function extractFlightContextFromMessage(message: string): FlightContext | null {
+  const params = extractFlightParamsFromText(message);
+  
+  if (!params.destination) {
+    return null;
+  }
+  
+  // 出発日を決定
+  let departureDate: string;
+  let returnDate: string | undefined;
+  
+  if (params.departureDate) {
+    departureDate = params.departureDate;
+    returnDate = params.returnDate;
+  } else if (params.departureDateStart && params.departureDateEnd) {
+    // 抽象的な日付の場合は期間の中央
+    const start = new Date(params.departureDateStart);
+    const end = new Date(params.departureDateEnd);
+    const mid = new Date((start.getTime() + end.getTime()) / 2);
+    departureDate = mid.toISOString().split('T')[0];
+    
+    // 滞在日数があれば帰国日を計算
+    if (params.stayDuration) {
+      const ret = new Date(mid);
+      ret.setDate(ret.getDate() + params.stayDuration - 1);
+      returnDate = ret.toISOString().split('T')[0];
+    }
+  } else {
+    // 日付情報がない場合は1ヶ月後
+    const today = new Date();
+    today.setMonth(today.getMonth() + 1);
+    departureDate = today.toISOString().split('T')[0];
+  }
+  
+  return {
+    destination: params.destination,
+    departureDate,
+    returnDate,
+    passengers: params.adults || 1,
+  };
+}
+
+/**
  * 航空券検索リクエストかどうか判定
  */
 function isFlightSearchRequest(message: string): boolean {
@@ -315,15 +375,56 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     
     let response: string;
     
+    // ホテル提案への応答をチェック（hotel_ask状態の場合）
+    if (state.step === 'hotel_ask') {
+      if (isHotelAffirmative(userMessage)) {
+        console.log('🏨 Hotel affirmative response');
+        const context = state.hotelContext;
+        if (context) {
+          // コンテキストがある場合は入力テンプレートを提示
+          setUserState(userId, { 
+            step: 'hotel_search', 
+            hotelContext: context,
+            hotelSearchData: createHotelContextFromFlight(context),
+          });
+          response = generateHotelInputTemplate(context);
+        } else {
+          setUserState(userId, { step: 'hotel_search' });
+          response = generateHotelInputTemplate();
+        }
+      } else if (isHotelNegative(userMessage)) {
+        console.log('🏨 Hotel declined');
+        setUserState(userId, { step: 'idle' });
+        response = '承知しました！\n\n他にご質問がありましたらお気軽にどうぞ 😊';
+      } else {
+        // 判断できない場合はホテル検索として処理
+        console.log('🏨 Treating as hotel search query');
+        response = await handleHotelQuery(userId, userMessage, state.hotelContext);
+      }
+    }
+    // ホテル検索中（hotel_search状態の場合）
+    else if (state.step === 'hotel_search') {
+      console.log('🏨 Hotel search in progress');
+      response = await handleHotelQuery(userId, userMessage, state.hotelContext);
+    }
     // リッチメニューから「航空券」とだけ送られた場合 → テンプレート表示
-    if (isFlightTemplateRequest(userMessage)) {
+    else if (isFlightTemplateRequest(userMessage)) {
       console.log('📋 Template request detected');
       response = getFlightSearchTemplate();
     }
     // エルメからの航空券検索フォーム（全ての条件が揃っている場合）
     else if (isCompleteFlightRequest(userMessage)) {
       console.log('✈️ Complete flight request detected');
-      response = await handleFlightQuery(userId, userMessage);
+      const flightResult = await handleFlightQuery(userId, userMessage);
+      
+      // フライト検索が成功したらホテル提案を追加
+      const flightContext = extractFlightContextFromMessage(userMessage);
+      if (flightContext) {
+        setUserState(userId, { step: 'hotel_ask', hotelContext: flightContext });
+        response = flightResult + generateHotelOfferMessage();
+      } else {
+        response = flightResult;
+      }
       console.log('📤 Flight response ready:', response.substring(0, 100) + '...');
     } else if (userMessage === 'アンケート' || userMessage === '登録') {
       setUserState(userId, { step: 'survey_region', surveyData: {} });
@@ -333,7 +434,16 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     } else if (userMessage.includes('治安') || userMessage.includes('安全')) {
       response = await handleSafetyQuery(userMessage);
     } else if (isFlightSearchRequest(userMessage)) {
-      response = await handleFlightQuery(userId, userMessage);
+      const flightResult = await handleFlightQuery(userId, userMessage);
+      
+      // フライト検索が成功したらホテル提案を追加
+      const flightContext = extractFlightContextFromMessage(userMessage);
+      if (flightContext) {
+        setUserState(userId, { step: 'hotel_ask', hotelContext: flightContext });
+        response = flightResult + generateHotelOfferMessage();
+      } else {
+        response = flightResult;
+      }
     } else {
       response = await handleGeneralQuery(userId, userMessage);
     }
@@ -626,4 +736,130 @@ async function handleGeneralQuery(userId: string, message: string): Promise<stri
   const history = getConversationHistory(userId, 5);
   
   return await generateFlightResponse(message, history, { surveyData });
+}
+
+/**
+ * ホテル検索の質問に対する応答を処理
+ */
+function isHotelAffirmative(message: string): boolean {
+  const affirmatives = ['はい', 'お願い', 'yes', 'ホテル', 'ほてる', 'する', 'したい', '予約', 'うん', 'ええ', 'いいね'];
+  const normalized = message.toLowerCase().trim();
+  return affirmatives.some(a => normalized.includes(a));
+}
+
+function isHotelNegative(message: string): boolean {
+  const negatives = ['いいえ', 'いや', 'いらない', '不要', 'no', 'やめ', '大丈夫', '結構', 'しない'];
+  const normalized = message.toLowerCase().trim();
+  return negatives.some(n => normalized.includes(n));
+}
+
+/**
+ * ホテル検索クエリを処理
+ */
+async function handleHotelQuery(userId: string, message: string, context?: FlightContext): Promise<string> {
+  console.log('🏨 handleHotelQuery started');
+  
+  const state = getUserState(userId);
+  const existingParams = state.hotelSearchData || {};
+  
+  // コンテキストからデフォルト値を設定
+  if (context) {
+    existingParams.location = existingParams.location || context.destination;
+    existingParams.checkIn = existingParams.checkIn || context.departureDate;
+    existingParams.checkOut = existingParams.checkOut || context.returnDate;
+    existingParams.adults = existingParams.adults || context.passengers;
+  }
+  
+  // パラメータ抽出を試みる
+  let extractedParams;
+  try {
+    extractedParams = await extractHotelParams(message, existingParams);
+    console.log('🏨 Extracted hotel params:', JSON.stringify(extractedParams));
+  } catch (error) {
+    console.warn('⚠️ Hotel param extraction failed:', error);
+    const missingFields: string[] = [];
+    if (!existingParams.location) missingFields.push('location');
+    if (!existingParams.checkIn) missingFields.push('checkIn');
+    if (!existingParams.checkOut) missingFields.push('checkOut');
+    
+    extractedParams = {
+      ...existingParams,
+      location: existingParams.location || '',
+      checkIn: existingParams.checkIn || '',
+      checkOut: existingParams.checkOut || '',
+      adults: existingParams.adults || 1,
+      isComplete: false,
+      missingFields,
+    };
+  }
+  
+  // 必須情報が揃っていない場合
+  if (!extractedParams.isComplete && extractedParams.missingFields.length > 0) {
+    // パラメータを保存して次回に引き継ぐ
+    const paramsToSave: Partial<HotelSearchParams> = {
+      location: extractedParams.location,
+      checkIn: extractedParams.checkIn,
+      checkOut: extractedParams.checkOut,
+      adults: extractedParams.adults,
+      rooms: extractedParams.rooms,
+      children: extractedParams.children,
+      stars: extractedParams.stars,
+      maxPrice: extractedParams.maxPrice,
+    };
+    
+    setUserState(userId, {
+      ...state,
+      step: 'hotel_search',
+      hotelSearchData: paramsToSave,
+      hotelContext: context,
+    });
+    
+    let response = '🏨 ホテル検索\n\n';
+    response += '以下の情報を教えてください:\n\n';
+    
+    if (extractedParams.missingFields.includes('location')) {
+      response += '📍 宿泊先の都市\n';
+      response += '　 例）バンクーバー、ソウル、バリ\n\n';
+    }
+    if (extractedParams.missingFields.includes('checkIn')) {
+      response += '📅 チェックイン日\n';
+      response += '　 例）5月15日、2024-05-15\n\n';
+    }
+    if (extractedParams.missingFields.includes('checkOut')) {
+      response += '📅 チェックアウト日\n';
+      response += '　 例）5月20日、5泊\n\n';
+    }
+    
+    response += '💡 オプション（任意）:\n';
+    response += '・星評価: 3つ星以上\n';
+    response += '・予算: 1泊15000円まで';
+    
+    return response;
+  }
+  
+  // パラメータが揃っているので検索実行
+  setUserState(userId, { step: 'idle' });
+  
+  const searchParams: HotelSearchParams = {
+    location: extractedParams.location || '',
+    checkIn: extractedParams.checkIn || '',
+    checkOut: extractedParams.checkOut || '',
+    adults: extractedParams.adults || 1,
+    rooms: extractedParams.rooms || 1,
+    children: extractedParams.children || 0,
+    stars: extractedParams.stars,
+    maxPrice: extractedParams.maxPrice,
+  };
+  
+  console.log('🔍 Searching for cheapest hotel...');
+  
+  const result = await searchCheapestHotel(searchParams);
+  return formatHotelResultForLine(result, searchParams);
+}
+
+/**
+ * ホテル提案メッセージを生成
+ */
+function generateHotelOfferMessage(): string {
+  return `\n\n━━━━━━━━━━━━━━━\n\n🏨 ホテルは予約されますか？\n\n「はい」と返信すると、\n最安値のホテルをお探しします！`;
 }
