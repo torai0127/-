@@ -43,122 +43,23 @@ export interface HotelResult {
 }
 
 const TRAVELPAYOUTS_HOTELS_API = 'https://engine.hotellook.com/api/v2';
+const HOTELLOOK_AUTOCOMPLETE_API = 'https://engine.hotellook.com/api/v2/lookup.json';
 
-// 都市名 → Travelpayouts Location ID マッピング
-const CITY_LOCATION_IDS: Record<string, string> = {
-  // 北米
-  'バンクーバー': '2842',
-  'vancouver': '2842',
-  'トロント': '2843',
-  'toronto': '2843',
-  'ニューヨーク': '1499',
-  'new york': '1499',
-  'ロサンゼルス': '1497',
-  'los angeles': '1497',
-  'サンフランシスコ': '1500',
-  'san francisco': '1500',
-  'シアトル': '3131',
-  'seattle': '3131',
-  'ラスベガス': '1496',
-  'las vegas': '1496',
-  'ホノルル': '3138',
-  'honolulu': '3138',
-  'ハワイ': '3138',
-  'hawaii': '3138',
-  
-  // アジア
-  'ソウル': '2474',
-  'seoul': '2474',
-  '台北': '2469',
-  'taipei': '2469',
-  '香港': '2466',
-  'hong kong': '2466',
-  'シンガポール': '2468',
-  'singapore': '2468',
-  'バンコク': '2470',
-  'bangkok': '2470',
-  'バリ': '3059',
-  'bali': '3059',
-  'セブ': '3101',
-  'cebu': '3101',
-  'マニラ': '3100',
-  'manila': '3100',
-  'ホーチミン': '3108',
-  'ho chi minh': '3108',
-  'ハノイ': '3107',
-  'hanoi': '3107',
-  'クアラルンプール': '2471',
-  'kuala lumpur': '2471',
-  
-  // ヨーロッパ
-  'パリ': '2',
-  'paris': '2',
-  'ロンドン': '1',
-  'london': '1',
-  'ローマ': '3',
-  'rome': '3',
-  'バルセロナ': '4',
-  'barcelona': '4',
-  'アムステルダム': '7',
-  'amsterdam': '7',
-  
-  // オセアニア
-  'シドニー': '2488',
-  'sydney': '2488',
-  'メルボルン': '2489',
-  'melbourne': '2489',
-  'オークランド': '2496',
-  'auckland': '2496',
-  
-  // 日本国内
-  '東京': '2465',
-  'tokyo': '2465',
-  '大阪': '2530',
-  'osaka': '2530',
-  '京都': '2529',
-  'kyoto': '2529',
-  '福岡': '2528',
-  'fukuoka': '2528',
-  '札幌': '2531',
-  'sapporo': '2531',
-  '沖縄': '2532',
-  '那覇': '2532',
-  'okinawa': '2532',
-};
+// ロケーション検索結果のキャッシュ（メモリ内）
+const locationCache = new Map<string, { id: string; name: string; fullName: string }>();
 
-// 国名 → 代表都市のマッピング
-const COUNTRY_TO_CITY: Record<string, string> = {
-  'カナダ': 'バンクーバー',
-  'canada': 'バンクーバー',
-  'アメリカ': 'ニューヨーク',
-  'usa': 'ニューヨーク',
-  '韓国': 'ソウル',
-  'korea': 'ソウル',
-  '台湾': '台北',
-  'taiwan': '台北',
-  'タイ': 'バンコク',
-  'thailand': 'バンコク',
-  'フィリピン': 'マニラ',
-  'philippines': 'マニラ',
-  'ベトナム': 'ホーチミン',
-  'vietnam': 'ホーチミン',
-  'インドネシア': 'バリ',
-  'indonesia': 'バリ',
-  'マレーシア': 'クアラルンプール',
-  'malaysia': 'クアラルンプール',
-  'フランス': 'パリ',
-  'france': 'パリ',
-  'イギリス': 'ロンドン',
-  'uk': 'ロンドン',
-  'イタリア': 'ローマ',
-  'italy': 'ローマ',
-  'スペイン': 'バルセロナ',
-  'spain': 'バルセロナ',
-  'オーストラリア': 'シドニー',
-  'australia': 'シドニー',
-  'ニュージーランド': 'オークランド',
-  'new zealand': 'オークランド',
-};
+interface LocationSearchResult {
+  id: string;
+  cityName: string;
+  fullName: string;
+  countryName: string;
+  iata?: string[];
+  hotelsCount: number;
+  location: {
+    lat: number;
+    lon: number;
+  };
+}
 
 /**
  * 環境変数からAPIトークンを取得
@@ -175,40 +76,81 @@ export function isHotelApiAvailable(): boolean {
 }
 
 /**
- * 都市名からLocation IDを取得
+ * 都市名からLocation IDを動的に検索
+ * Hotellook Autocomplete APIを使用して全世界の都市に対応
  */
-function getLocationId(location: string): string | null {
-  const normalized = location.toLowerCase().trim();
-  
-  // 直接マッチ
-  if (CITY_LOCATION_IDS[normalized]) {
-    return CITY_LOCATION_IDS[normalized];
-  }
-  if (CITY_LOCATION_IDS[location]) {
-    return CITY_LOCATION_IDS[location];
+async function searchLocationId(location: string): Promise<{ id: string; name: string; fullName: string } | null> {
+  // キャッシュをチェック
+  const cacheKey = location.toLowerCase().trim();
+  if (locationCache.has(cacheKey)) {
+    console.log(`📍 Location cache hit: ${location}`);
+    return locationCache.get(cacheKey)!;
   }
   
-  // 国名から代表都市を取得
-  const city = COUNTRY_TO_CITY[normalized] || COUNTRY_TO_CITY[location];
-  if (city && CITY_LOCATION_IDS[city]) {
-    return CITY_LOCATION_IDS[city];
+  const token = getTravelpayoutsToken();
+  if (!token) {
+    return null;
   }
   
-  return null;
+  try {
+    const queryParams = new URLSearchParams({
+      query: location,
+      lang: 'ja',
+      lookFor: 'city',
+      limit: '5',
+      token,
+    });
+    
+    console.log(`🔍 Searching location: ${location}`);
+    
+    const response = await fetch(`${HOTELLOOK_AUTOCOMPLETE_API}?${queryParams.toString()}`);
+    
+    if (!response.ok) {
+      console.error(`❌ Location search failed: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json() as { results?: { locations?: LocationSearchResult[] } };
+    
+    // results.locations から都市を取得
+    const locations = data?.results?.locations || [];
+    
+    if (locations.length === 0) {
+      console.log(`⚠️ No location found for: ${location}`);
+      return null;
+    }
+    
+    // 最も関連性の高い結果を選択
+    const best = locations[0] as LocationSearchResult;
+    
+    const result = {
+      id: best.id,
+      name: best.cityName,
+      fullName: best.fullName,
+    };
+    
+    // キャッシュに保存
+    locationCache.set(cacheKey, result);
+    
+    console.log(`✅ Found location: ${result.fullName} (ID: ${result.id})`);
+    
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Location search error:', error);
+    return null;
+  }
 }
 
 /**
  * 都市名を正規化（表示用）
  */
 export function normalizeCityName(location: string): string {
-  const normalized = location.toLowerCase().trim();
-  
-  // 国名の場合は代表都市を返す
-  const city = COUNTRY_TO_CITY[normalized] || COUNTRY_TO_CITY[location];
-  if (city) {
-    return city;
+  // キャッシュに正式名があればそれを使用
+  const cacheKey = location.toLowerCase().trim();
+  if (locationCache.has(cacheKey)) {
+    return locationCache.get(cacheKey)!.name;
   }
-  
   return location;
 }
 
@@ -225,15 +167,17 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
     };
   }
   
-  const locationId = getLocationId(params.location);
-  if (!locationId) {
-    console.log(`⚠️ Unknown location: ${params.location}`);
-    // Location IDが見つからない場合はディープリンクのみ生成
+  // 動的にロケーションIDを検索
+  const locationInfo = await searchLocationId(params.location);
+  if (!locationInfo) {
+    console.log(`⚠️ Location not found: ${params.location}`);
     return {
       success: false,
       error: `Location not found: ${params.location}`,
     };
   }
+  
+  const locationId = locationInfo.id;
   
   try {
     const queryParams = new URLSearchParams({
@@ -252,7 +196,7 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
       queryParams.set('childrenAges', params.childrenAges.join(','));
     }
     
-    console.log(`🔍 Searching hotels in ${params.location} (ID: ${locationId})...`);
+    console.log(`🔍 Searching hotels in ${locationInfo.fullName} (ID: ${locationId})...`);
     
     const response = await fetch(
       `${TRAVELPAYOUTS_HOTELS_API}/cache.json?${queryParams.toString()}`
@@ -322,7 +266,7 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
         stars: cheapest.stars || 0,
         rating: cheapest.rating,
         reviewCount: cheapest.reviews,
-        location: normalizeCityName(params.location),
+        location: locationInfo.name,
         pricePerNight,
         pricePerNightFormatted: `¥${pricePerNight.toLocaleString()}`,
         totalPrice,
