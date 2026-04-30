@@ -132,4 +132,23 @@ app.get('/api/stats', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🛫 Unisia Flight Bot running on port ${PORT}`);
   console.log(`📡 Webhook URL: http://localhost:${PORT}/webhook`);
+  
+  // Keep-alive: 自己pingでスリープを防止（Render無料枠対策）
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+  if (RENDER_URL) {
+    const PING_INTERVAL = 10 * 60 * 1000; // 10分ごと
+    
+    setInterval(async () => {
+      try {
+        const response = await fetch(`${RENDER_URL}/health`);
+        if (response.ok) {
+          console.log('💓 Keep-alive ping successful');
+        }
+      } catch (error) {
+        console.log('⚠️ Keep-alive ping failed (this is normal during cold start)');
+      }
+    }, PING_INTERVAL);
+    
+    console.log(`💓 Keep-alive enabled: pinging every 10 minutes`);
+  }
 });
