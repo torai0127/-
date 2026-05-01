@@ -87,10 +87,18 @@ function extractFlightParamsFromText(message: string): any {
     result.destination = destMatch[1].trim();
   }
   
-  // 出発空港を抽出
-  const airportMatch = message.match(/(?:空港|出発)[:\s：]*([^\n,、]+)/i);
+  // 出発空港を抽出（「出発空港」「空港」パターンに対応）
+  const airportMatch = message.match(/(?:出発空港|空港)[:\s：]*([^\n,、]+)/i);
   if (airportMatch) {
-    result.origin = airportMatch[1].trim().replace('空港', '');
+    // コロンやスペースを除去して空港名のみ取得
+    let airport = airportMatch[1].trim();
+    // 先頭の「:」「：」を除去
+    airport = airport.replace(/^[:\s：]+/, '').trim();
+    // 「空港」を除去
+    airport = airport.replace(/空港$/, '').trim();
+    if (airport) {
+      result.origin = airport;
+    }
   }
   
   // 時期を抽出

@@ -812,8 +812,32 @@ export function buildPassengerEnglishClause(adults: number, children: number, in
  * 条件が検索フォームに自動入力される確実な方法
  */
 export function generateGoogleFlightsQueryUrl(params: FlightSearchParams): string {
-  const originCode = getAirportCode(params.origin) || params.origin.toUpperCase();
-  const destCode = getAirportCode(params.destination) || params.destination.toUpperCase();
+  // 空港コード取得（日本語名から変換、失敗時は大文字化）
+  let originCode = getAirportCode(params.origin);
+  let destCode = getAirportCode(params.destination);
+  
+  // デバッグログ
+  console.log(`🔍 URL生成: origin="${params.origin}" -> "${originCode}", dest="${params.destination}" -> "${destCode}"`);
+  
+  // フォールバック: 3文字の英字はそのまま使用、それ以外は日本語名で都市検索
+  if (!originCode) {
+    const cleaned = params.origin.trim();
+    if (/^[A-Za-z]{3}$/.test(cleaned)) {
+      originCode = cleaned.toUpperCase();
+    } else {
+      originCode = cleaned; // 日本語のまま（Google Flightsは解釈可能）
+    }
+  }
+  
+  if (!destCode) {
+    const cleaned = params.destination.trim();
+    if (/^[A-Za-z]{3}$/.test(cleaned)) {
+      destCode = cleaned.toUpperCase();
+    } else {
+      destCode = cleaned; // 日本語のまま
+    }
+  }
+  
   const { adults, children, infantsOnLap } = resolvePassengers(params);
 
   // 人数表現
@@ -832,6 +856,8 @@ export function generateGoogleFlightsQueryUrl(params: FlightSearchParams): strin
     q = `Flights from ${originCode} to ${destCode} on ${params.departureDate} ${paxStr}`;
   }
 
+  console.log(`📎 Generated query: ${q}`);
+  
   return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}&curr=JPY&hl=ja`;
 }
 

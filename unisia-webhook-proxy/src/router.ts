@@ -126,13 +126,21 @@ function routeTextMessage(event: MessageEvent, userId: string | null): RoutingRe
     }
   }
   
-  // キーワードルール
+  // キーワードルール（マッチしたらモードも設定）
   for (const rule of ROUTE_RULES) {
     if (rule.type === 'keyword' && text.includes(rule.pattern)) {
+      const newMode = targetToMode(rule.target);
+      
+      // 航空券・相談に関するキーワードはモードを設定して継続会話を有効化
+      if (userId && newMode !== 'default') {
+        setUserMode(userId, newMode);
+      }
+      
       return {
         target: rule.target,
         reason: `keyword: ${rule.description}`,
-        shouldUpdateMode: false,
+        shouldUpdateMode: newMode !== 'default',
+        newMode: newMode !== 'default' ? newMode : undefined,
       };
     }
   }
