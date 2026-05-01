@@ -293,12 +293,29 @@ function calculateNights(checkIn: string, checkOut: string): number {
 }
 
 /**
- * 特定のホテルページへの直接リンクを生成
- * ホテル名で検索して、そのホテルが最上位に表示されるURLを生成
+ * ホテル予約ページへの直接リンクを生成
+ * hotel_idを使用して、部屋選択・予約画面に直接遷移
  */
 function generateDirectHotelUrl(hotelName: string, hotelId: string, params: HotelSearchParams): string {
+  // ホテルIDがある場合は直接ホテルページへ（予約画面）
+  if (hotelId) {
+    const queryParams = new URLSearchParams({
+      checkin: params.checkIn,
+      checkout: params.checkOut,
+      group_adults: params.adults.toString(),
+      no_rooms: (params.rooms || 1).toString(),
+      group_children: (params.children || 0).toString(),
+      selected_currency: 'JPY',
+      lang: 'ja',
+    });
+    
+    // Booking.comのホテル直接リンク形式
+    return `https://www.booking.com/hotel/index.ja.html?hotel_id=${hotelId}&${queryParams.toString()}`;
+  }
+  
+  // フォールバック: ホテル名で検索
   const queryParams = new URLSearchParams({
-    ss: hotelName,  // ホテル名で検索（特定のホテルが最上位に表示される）
+    ss: hotelName,
     checkin: params.checkIn,
     checkout: params.checkOut,
     group_adults: params.adults.toString(),
@@ -306,11 +323,6 @@ function generateDirectHotelUrl(hotelName: string, hotelId: string, params: Hote
     group_children: (params.children || 0).toString(),
     selected_currency: 'JPY',
   });
-  
-  // ホテルIDがある場合は追加（より正確なマッチング）
-  if (hotelId) {
-    queryParams.set('highlighted_hotels', hotelId);
-  }
 
   return `https://www.booking.com/searchresults.ja.html?${queryParams.toString()}`;
 }
