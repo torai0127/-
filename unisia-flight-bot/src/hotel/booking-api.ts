@@ -68,7 +68,11 @@ interface HotelSearchResult {
         currency?: string;
       };
     };
+    checkinDate?: string;
+    checkoutDate?: string;
   };
+  // Direct hotel page URL (if provided by API)
+  url?: string;
 }
 
 function getRapidApiKey(): string | null {
@@ -235,16 +239,21 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
 
     // ホテル名を取得
     const hotelName = prop.name || cheapest.accessibilityLabel?.split('\n')[0] || 'Hotel';
+    const hotelId = cheapest.hotel_id?.toString() || '';
 
     // 市場相場（1.4倍 + 5000円）
     const marketPricePerNight = Math.round((pricePerNight * 1.4 + 5000) / 1000) * 1000;
     const marketPrice = marketPricePerNight * nights;
     const savings = marketPrice - totalPrice;
 
+    // ホテル直接リンクを生成（ホテル名で検索して特定のホテルを表示）
+    const directHotelLink = generateDirectHotelUrl(hotelName, hotelId, params);
+    console.log(`🔗 Generated hotel link: ${directHotelLink}`);
+
     const result: HotelResult = {
       success: true,
       hotel: {
-        id: cheapest.hotel_id?.toString() || '',
+        id: hotelId,
         name: hotelName,
         stars: prop.qualityClass || prop.propertyClass || 0,
         rating: prop.reviewScore,
@@ -258,7 +267,7 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
         marketPriceFormatted: `¥${marketPrice.toLocaleString()}`,
         savings,
         savingsFormatted: `¥${savings.toLocaleString()}`,
-        deepLink: generateBookingUrl(params, destination.dest_id),
+        deepLink: directHotelLink,
         imageUrl: prop.photoUrls?.[0],
       },
     };
@@ -281,6 +290,29 @@ function calculateNights(checkIn: string, checkOut: string): number {
   const outDate = new Date(checkOut);
   const diff = outDate.getTime() - inDate.getTime();
   return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * 特定のホテルページへの直接リンクを生成
+ * ホテル名で検索して、そのホテルが最上位に表示されるURLを生成
+ */
+function generateDirectHotelUrl(hotelName: string, hotelId: string, params: HotelSearchParams): string {
+  const queryParams = new URLSearchParams({
+    ss: hotelName,  // ホテル名で検索（特定のホテルが最上位に表示される）
+    checkin: params.checkIn,
+    checkout: params.checkOut,
+    group_adults: params.adults.toString(),
+    no_rooms: (params.rooms || 1).toString(),
+    group_children: (params.children || 0).toString(),
+    selected_currency: 'JPY',
+  });
+  
+  // ホテルIDがある場合は追加（より正確なマッチング）
+  if (hotelId) {
+    queryParams.set('highlighted_hotels', hotelId);
+  }
+
+  return `https://www.booking.com/searchresults.ja.html?${queryParams.toString()}`;
 }
 
 function generateBookingUrl(params: HotelSearchParams, destId?: string): string {
