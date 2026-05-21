@@ -81,6 +81,32 @@ function isCompleteFlightRequest(message: string): boolean {
 function extractFlightParamsFromText(message: string): any {
   const result: any = {};
   
+  // 片道/往復を判定
+  // テンプレート形式を優先（「片道/往復: 片道」「片道/往復: 往復」）
+  const tripTypeMatch = message.match(/(?:片道\/往復|片道・往復|旅程)[:\s：]*([^\n,、]+)/i);
+  if (tripTypeMatch) {
+    const tripTypeValue = tripTypeMatch[1].trim().toLowerCase();
+    if (tripTypeValue.includes('片道') || tripTypeValue === 'one way' || tripTypeValue === 'oneway') {
+      result.tripType = 'one_way';
+    } else if (tripTypeValue.includes('往復') || tripTypeValue === 'round trip' || tripTypeValue === 'roundtrip') {
+      result.tripType = 'round_trip';
+    }
+  }
+  
+  // テンプレート形式でなければ、キーワードで判定
+  if (!result.tripType) {
+    const oneWayKeywords = ['片道', 'かたみち', 'one way', 'oneway', '行きのみ', '行きだけ'];
+    const roundTripKeywords = ['往復', 'おうふく', 'round trip', 'roundtrip', '行き帰り'];
+    
+    const messageNormalized = message.toLowerCase();
+    if (oneWayKeywords.some(k => messageNormalized.includes(k))) {
+      result.tripType = 'one_way';
+    } else if (roundTripKeywords.some(k => messageNormalized.includes(k))) {
+      result.tripType = 'round_trip';
+    }
+  }
+  // キーワードがなければデフォルトは往復（handleFlightQueryで設定）
+  
   // 目的地を抽出（いきたい地域: ○○ or 行きたい地域: ○○）
   const destMatch = message.match(/(?:いきたい地域|行きたい地域)[:\s：]*([^\n,、]+)/i);
   if (destMatch) {
@@ -305,23 +331,36 @@ function getFlightSearchTemplate(): string {
 期間: 
 人数: 
 出発空港: 
+片道/往復: 
 
 ━━━━━━━━━━━━━━━
 
-【入力例】
+【入力例①】往復の場合
 
 いきたい地域: フィリピン
 いきたい時期: 6月15日〜20日
 期間: 5泊6日
 人数: 2人（大人2）
 出発空港: 福岡
+片道/往復: 往復
+
+━━━━━━━━━━━━━━━
+
+【入力例②】片道の場合
+
+いきたい地域: 韓国
+いきたい時期: 7月1日
+人数: 1人
+出発空港: 成田
+片道/往復: 片道
 
 ━━━━━━━━━━━━━━━
 
 💡 入力のコツ
 ・地域は国名or都市名でOK
 ・時期は「5月」「GW」など曖昧でもOK
-・人数は「大人2、子供1」のように詳しく書くと正確です`;
+・人数は「大人2、子供1」のように詳しく書くと正確です
+・片道/往復を省略した場合は「往復」として検索`;
 }
 
 export async function handleEvent(event: WebhookEvent): Promise<void> {
@@ -664,20 +703,23 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
   const children = params.children || 0;
   const infantsOnLap = params.infantsOnLap || 0;
   const tripType: 'round_trip' | 'one_way' = params.tripType || 'round_trip';
+  const isOneWay = tripType === 'one_way';
   
-  // 滞在日数を計算（returnDateがある場合はそこから計算）
-  let stayDuration: number;
-  if (params.returnDate && params.departureDate) {
-    const dep = new Date(params.departureDate);
-    const ret = new Date(params.returnDate);
-    stayDuration = Math.ceil((ret.getTime() - dep.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  } else {
-    stayDuration = params.stayDuration || 7;
+  // 滞在日数を計算（returnDateがある場合はそこから計算）- 片道の場合は不要
+  let stayDuration: number = 7;
+  if (!isOneWay) {
+    if (params.returnDate && params.departureDate) {
+      const dep = new Date(params.departureDate);
+      const ret = new Date(params.returnDate);
+      stayDuration = Math.ceil((ret.getTime() - dep.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    } else {
+      stayDuration = params.stayDuration || 7;
+    }
   }
   
   // 出発日・帰国日を決定
   let departureDate: string;
-  let returnDate: string;
+  let returnDate: string | undefined;
   
   // 抽象的な日付（「5月」「5月末」など）の場合は、期間の中央を出発日とする
   if (params.isFlexibleDate && params.departureDateStart && params.departureDateEnd) {
@@ -686,17 +728,23 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     const midDate = new Date((startDateObj.getTime() + endDateObj.getTime()) / 2);
     departureDate = midDate.toISOString().split('T')[0];
     
-    const retDate = new Date(midDate);
-    retDate.setDate(retDate.getDate() + stayDuration - 1);
-    returnDate = retDate.toISOString().split('T')[0];
+    // 片道の場合は帰国日を設定しない
+    if (!isOneWay) {
+      const retDate = new Date(midDate);
+      retDate.setDate(retDate.getDate() + stayDuration - 1);
+      returnDate = retDate.toISOString().split('T')[0];
+    }
   } else if (params.departureDate) {
     departureDate = params.departureDate;
-    if (params.returnDate) {
-      returnDate = params.returnDate;
-    } else {
-      const depDate = new Date(departureDate);
-      depDate.setDate(depDate.getDate() + stayDuration - 1);
-      returnDate = depDate.toISOString().split('T')[0];
+    // 片道の場合は帰国日を設定しない
+    if (!isOneWay) {
+      if (params.returnDate) {
+        returnDate = params.returnDate;
+      } else {
+        const depDate = new Date(departureDate);
+        depDate.setDate(depDate.getDate() + stayDuration - 1);
+        returnDate = depDate.toISOString().split('T')[0];
+      }
     }
   } else {
     // 日付情報がない場合、1ヶ月後を出発日とする
@@ -704,9 +752,12 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
     today.setMonth(today.getMonth() + 1);
     departureDate = today.toISOString().split('T')[0];
     
-    const retDate = new Date(today);
-    retDate.setDate(retDate.getDate() + stayDuration - 1);
-    returnDate = retDate.toISOString().split('T')[0];
+    // 片道の場合は帰国日を設定しない
+    if (!isOneWay) {
+      const retDate = new Date(today);
+      retDate.setDate(retDate.getDate() + stayDuration - 1);
+      returnDate = retDate.toISOString().split('T')[0];
+    }
   }
   
   // 検索パラメータを構築

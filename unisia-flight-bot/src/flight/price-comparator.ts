@@ -296,9 +296,11 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
     paxStr = `${adults + children}名（大人${adults}、子供${children}）`;
   }
   
+  const tripTypeStr = searchParams.tripType === 'one_way' ? '片道' : '往復';
+  
   let response = `✈️ 航空券検索結果\n\n`;
   response += `📍 ${searchParams.origin} → ${searchParams.destination}\n`;
-  response += `📅 ${dateRange}\n`;
+  response += `📅 ${dateRange}（${tripTypeStr}）\n`;
   response += `👥 ${paxStr}\n\n`;
   
   // 市場相場と最安値を表示
@@ -372,9 +374,11 @@ export function formatSimpleResultForLine(params: MultiSiteSearchParams): string
     paxStr = `${adults + children}名（大人${adults}、子供${children}）`;
   }
   
+  const tripTypeStr = params.tripType === 'one_way' ? '片道' : '往復';
+  
   let response = `✈️ 航空券検索結果\n\n`;
   response += `📍 ${params.origin} → ${params.destination}\n`;
-  response += `📅 ${dateRange}\n`;
+  response += `📅 ${dateRange}（${tripTypeStr}）\n`;
   response += `👥 ${paxStr}\n\n`;
   
   response += `🔗 最安値で予約する\n`;

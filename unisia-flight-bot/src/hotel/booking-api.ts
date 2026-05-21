@@ -5,6 +5,19 @@
  * 既存のRapidAPIキーを使用
  */
 
+import {
+  BOOKING_PRICE_SORT_HINT_LINE,
+  buildBookingRegionalListUrl,
+  buildBookingSearchFallbackUrl,
+  extractBookingHotelCountryCode,
+  extractBookingPropertyPageUrl,
+  isBookingPropertyPageHref,
+  mergeStayParamsOntoPropertyPage,
+  parseBookingPropertyUrl,
+  type BookingStayQuerySource,
+} from './booking-property-url.js';
+import { resolveRegionProfile, scoreDestinationAgainstProfile } from './booking-region-profile.js';
+
 export interface HotelSearchParams {
   location: string;
   checkIn: string;           // YYYY-MM-DD
@@ -36,6 +49,8 @@ export interface HotelResult {
     savings: number;
     savingsFormatted: string;
     deepLink: string;
+    /** 地域だけの一覧（名前を絞らない）。並び替えはBooking側で行う前提 */
+    regionalSearchUrl?: string;
     imageUrl?: string;
   };
   error?: string;
@@ -50,6 +65,31 @@ interface DestinationResult {
   city_name: string;
   country: string;
   label: string;
+}
+
+function pickBestDestination(results: DestinationResult[], query: string): DestinationResult {
+  const normalized = query.trim().normalize('NFKC');
+  const profile = resolveRegionProfile(normalized);
+  let best = results[0];
+  let bestScore = scoreDestinationAgainstProfile(best, profile, normalized);
+  for (let i = 1; i < results.length; i++) {
+    const s = scoreDestinationAgainstProfile(results[i], profile, normalized);
+    if (s > bestScore) {
+      best = results[i];
+      bestScore = s;
+    }
+  }
+  return best;
+}
+
+function toStaySource(params: HotelSearchParams): BookingStayQuerySource {
+  return {
+    checkIn: params.checkIn,
+    checkOut: params.checkOut,
+    adults: params.adults,
+    rooms: params.rooms || 1,
+    children: params.children || 0,
+  };
 }
 
 interface HotelSearchResult {
@@ -73,6 +113,44 @@ interface HotelSearchResult {
   };
   // Direct hotel page URL (if provided by API)
   url?: string;
+}
+
+/** プロパティURLの国コードで絞り込み（APIが別国の最安を混ぜる事故の抑止） */
+function filterHotelsByRegionCountry(
+  hotels: HotelSearchResult[],
+  locationQuery: string,
+): HotelSearchResult[] {
+  const profile = resolveRegionProfile(locationQuery.trim().normalize('NFKC'));
+  if (!profile?.bookingCountryCodes.length) return hotels;
+
+  const allow = profile.bookingCountryCodes;
+  const positivelyMatched = hotels.filter((h) => {
+    const cc = extractBookingHotelCountryCode(h.url);
+    return cc !== null && allow.includes(cc);
+  });
+
+  if (positivelyMatched.length > 0) {
+    console.log(`🌍 国コード一致 [${allow.join('|')}]: ${hotels.length} → ${positivelyMatched.length} 件`);
+    return positivelyMatched;
+  }
+
+  // URLはあるが想定国外だけ → jp の最安だけ残る問題を除去（URL無しは様子見で残す）
+  const stripped = hotels.filter((h) => {
+    const cc = extractBookingHotelCountryCode(h.url);
+    if (cc === null) return true;
+    return allow.includes(cc);
+  });
+
+  if (stripped.length > 0) {
+    const removed = hotels.length - stripped.length;
+    console.log(`🌍 想定外国コードを除去: −${removed}件（残り ${stripped.length}）`);
+    return stripped;
+  }
+
+  console.warn(
+    `⚠️ 指定地域 (${allow.join('/')}) と一致するプロパティがありません — 結果を破棄（誤検出防止）`,
+  );
+  return [];
 }
 
 function getRapidApiKey(): string | null {
@@ -114,8 +192,7 @@ async function searchDestination(query: string): Promise<DestinationResult | nul
       return null;
     }
 
-    // 最初の結果を使用（通常は最も関連性が高い）
-    const dest = data.data[0];
+    const dest = pickBestDestination(data.data, query);
     console.log(`✅ Found destination: ${dest.label} (ID: ${dest.dest_id})`);
     
     return dest;
@@ -138,8 +215,10 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
     };
   }
 
+  const locationKey = params.location.trim().normalize('NFKC');
+
   // まず目的地のIDを取得
-  const destination = await searchDestination(params.location);
+  const destination = await searchDestination(locationKey);
   if (!destination) {
     return {
       success: false,
@@ -212,6 +291,8 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
       return priceA - priceB;
     });
 
+    hotels = filterHotelsByRegionCountry(hotels, locationKey);
+
     // 価格上限フィルター
     if (params.maxPrice) {
       const nights = calculateNights(params.checkIn, params.checkOut);
@@ -246,8 +327,29 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
     const marketPrice = marketPricePerNight * nights;
     const savings = marketPrice - totalPrice;
 
-    // ホテル直接リンクを生成（ホテル名で検索して特定のホテルを表示）
-    const directHotelLink = generateDirectHotelUrl(hotelName, hotelId, params);
+    const stay = toStaySource(params);
+    let propertyPageUrl = parseBookingPropertyUrl(cheapest.url);
+    if (!propertyPageUrl && hotelId) {
+      propertyPageUrl =
+        (await fetchHotelDetailsPropertyUrl(hotelId, params)) ??
+        (await fetchRoomListPropertyUrl(hotelId, params));
+    }
+    const destHint = { dest_id: destination.dest_id, search_type: destination.search_type };
+
+    const searchBarContext =
+      [destination.label, destination.city_name, locationKey].find((s) => (s || '').trim()) || '';
+
+    const directHotelLink = propertyPageUrl
+      ? mergeStayParamsOntoPropertyPage(propertyPageUrl, stay, {
+          searchContext: searchBarContext,
+        })
+      : buildBookingSearchFallbackUrl(hotelName, locationKey, stay, destHint);
+
+    const regionalSearchUrl = buildBookingRegionalListUrl(
+      searchBarContext || locationKey,
+      stay,
+      destHint,
+    );
     console.log(`🔗 Generated hotel link: ${directHotelLink}`);
 
     const result: HotelResult = {
@@ -258,7 +360,7 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
         stars: prop.qualityClass || prop.propertyClass || 0,
         rating: prop.reviewScore,
         reviewCount: prop.reviewCount,
-        location: destination.city_name,
+        location: params.location?.trim().normalize('NFKC') || destination.city_name,
         pricePerNight,
         pricePerNightFormatted: `¥${pricePerNight.toLocaleString()}`,
         totalPrice,
@@ -268,6 +370,7 @@ export async function searchCheapestHotel(params: HotelSearchParams): Promise<Ho
         savings,
         savingsFormatted: `¥${savings.toLocaleString()}`,
         deepLink: directHotelLink,
+        regionalSearchUrl,
         imageUrl: prop.photoUrls?.[0],
       },
     };
@@ -293,56 +396,101 @@ function calculateNights(checkIn: string, checkOut: string): number {
 }
 
 /**
- * ホテル予約ページへの直接リンクを生成
- * hotel_idを使用して、部屋選択・予約画面に直接遷移
+ * RapidAPI getHotelDetails のレスポンスから正規プロパティURLを取得
  */
-function generateDirectHotelUrl(hotelName: string, hotelId: string, params: HotelSearchParams): string {
-  // ホテルIDがある場合は直接ホテルページへ（予約画面）
-  if (hotelId) {
-    const queryParams = new URLSearchParams({
-      checkin: params.checkIn,
-      checkout: params.checkOut,
-      group_adults: params.adults.toString(),
-      no_rooms: (params.rooms || 1).toString(),
-      group_children: (params.children || 0).toString(),
-      selected_currency: 'JPY',
-      lang: 'ja',
-    });
-    
-    // Booking.comのホテル直接リンク形式
-    return `https://www.booking.com/hotel/index.ja.html?hotel_id=${hotelId}&${queryParams.toString()}`;
-  }
-  
-  // フォールバック: ホテル名で検索
-  const queryParams = new URLSearchParams({
-    ss: hotelName,
-    checkin: params.checkIn,
-    checkout: params.checkOut,
-    group_adults: params.adults.toString(),
-    no_rooms: (params.rooms || 1).toString(),
-    group_children: (params.children || 0).toString(),
-    selected_currency: 'JPY',
-  });
+async function fetchHotelDetailsPropertyUrl(
+  hotelId: string,
+  params: HotelSearchParams,
+): Promise<string | null> {
+  const apiKey = getRapidApiKey();
+  if (!apiKey || !hotelId) return null;
 
-  return `https://www.booking.com/searchresults.ja.html?${queryParams.toString()}`;
+  try {
+    const queryParams = new URLSearchParams({
+      hotel_id: hotelId,
+      arrival_date: params.checkIn,
+      departure_date: params.checkOut,
+      adults: params.adults.toString(),
+      room_qty: (params.rooms || 1).toString(),
+      languagecode: 'ja',
+      currency_code: 'JPY',
+    });
+
+    if (params.children && params.children > 0 && params.childrenAges?.length) {
+      queryParams.set('children_age', params.childrenAges.join(','));
+    }
+
+    const url = `${RAPIDAPI_BASE_URL}/getHotelDetails?${queryParams.toString()}`;
+    const response = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ getHotelDetails HTTP ${response.status}`);
+      return null;
+    }
+
+    const payload = await response.json() as unknown;
+    return extractBookingPropertyPageUrl(payload);
+  } catch (error) {
+    console.warn('⚠️ getHotelDetails failed:', error);
+    return null;
+  }
 }
 
-function generateBookingUrl(params: HotelSearchParams, destId?: string): string {
-  const queryParams = new URLSearchParams({
-    ss: params.location,
-    checkin: params.checkIn,
-    checkout: params.checkOut,
-    group_adults: params.adults.toString(),
-    no_rooms: (params.rooms || 1).toString(),
-    group_children: (params.children || 0).toString(),
-  });
-  
-  if (destId) {
-    queryParams.set('dest_id', destId);
-    queryParams.set('dest_type', 'city');
-  }
+/** getHotelDetails でURLが取れないとき、getRoomList のJSONにもプロパティURLが載ることがある */
+async function fetchRoomListPropertyUrl(
+  hotelId: string,
+  params: HotelSearchParams,
+): Promise<string | null> {
+  const apiKey = getRapidApiKey();
+  if (!apiKey || !hotelId) return null;
 
-  return `https://www.booking.com/searchresults.ja.html?${queryParams.toString()}`;
+  try {
+    const queryParams = new URLSearchParams({
+      hotel_id: hotelId,
+      arrival_date: params.checkIn,
+      departure_date: params.checkOut,
+      adults: params.adults.toString(),
+      room_qty: (params.rooms || 1).toString(),
+      languagecode: 'ja',
+      currency_code: 'JPY',
+    });
+
+    if (params.children && params.children > 0 && params.childrenAges?.length) {
+      queryParams.set('children_age', params.childrenAges.join(','));
+    }
+
+    const url = `${RAPIDAPI_BASE_URL}/getRoomList?${queryParams.toString()}`;
+    const response = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': apiKey,
+        'X-RapidAPI-Host': RAPIDAPI_HOST,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ getRoomList HTTP ${response.status}`);
+      return null;
+    }
+
+    const payload = await response.json() as unknown;
+    return extractBookingPropertyPageUrl(payload);
+  } catch (error) {
+    console.warn('⚠️ getRoomList URL extract failed:', error);
+    return null;
+  }
+}
+
+function generateBookingUrl(params: HotelSearchParams, dest?: DestinationResult): string {
+  return buildBookingRegionalListUrl(
+    params.location.trim().normalize('NFKC'),
+    toStaySource(params),
+    dest?.dest_id ? { dest_id: dest.dest_id, search_type: dest.search_type } : undefined,
+  );
 }
 
 /**
@@ -364,7 +512,7 @@ export function formatHotelResultForLine(result: HotelResult, params: HotelSearc
   };
   
   let response = `🏨 ホテル検索結果\n\n`;
-  response += `📍 ${result.hotel?.location || params.location}\n`;
+  response += `📍 ${params.location || result.hotel?.location}\n`;
   response += `📅 ${formatDate(params.checkIn)} 〜 ${formatDate(params.checkOut)}（${nights}泊）\n`;
   response += `👥 ${params.adults}名`;
   if (params.rooms && params.rooms > 1) {
@@ -401,13 +549,27 @@ export function formatHotelResultForLine(result: HotelResult, params: HotelSearc
     response += `　 （${h.pricePerNightFormatted}/泊 × ${nights}泊）\n`;
     response += `🎉 最大 ${h.savingsFormatted} お得！\n\n`;
     
-    response += `🔗 このホテルを予約する\n`;
-    response += `${h.deepLink}\n`;
+    const primaryLabel = isBookingPropertyPageHref(h.deepLink)
+      ? '🔗 このホテルのページを開く'
+      : '🔗 検索結果を開く（候補の宿）';
+    response += `${primaryLabel}\n`;
+    response += `${h.deepLink}\n\n`;
+
+    if (h.regionalSearchUrl && h.regionalSearchUrl !== h.deepLink) {
+      response += `━━━━━━━━━━━━━━━\n`;
+      response += `📋 同じ日程で地域の宿を一覧で見る\n`;
+      response += `━━━━━━━━━━━━━━━\n\n`;
+      response += `${h.regionalSearchUrl}\n\n`;
+      response += `${BOOKING_PRICE_SORT_HINT_LINE}\n\n`;
+    } else {
+      response += `${BOOKING_PRICE_SORT_HINT_LINE}\n\n`;
+    }
     
   } else {
     response += `検索条件に合うホテルが見つかりませんでした。\n\n`;
     response += `🔗 他のサイトで検索する\n`;
-    response += generateBookingUrl(params) + `\n`;
+    response += `${generateBookingUrl(params)}\n\n`;
+    response += `${BOOKING_PRICE_SORT_HINT_LINE}\n`;
   }
   
   return response;
