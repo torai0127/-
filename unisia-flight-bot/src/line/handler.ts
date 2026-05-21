@@ -37,6 +37,7 @@ import { generateBookingComUrl } from '../hotel/hotel-deep-links.js';
 
 interface UserState {
   step: 'idle' | 'survey_region' | 'survey_airport' | 'survey_period' | 'survey_budget' | 'survey_purpose' | 'survey_goals' | 'flight_search' | 'hotel_ask' | 'hotel_search';
+  timestamp?: number; // 状態が設定された時刻（ミリ秒）
   surveyData?: {
     interestedRegions?: string[];
     departureAirports?: string[];
@@ -57,8 +58,26 @@ interface UserState {
 
 const userStates = new Map<string, UserState>();
 
+// ホテル提案のタイムアウト（15分）
+const HOTEL_ASK_TIMEOUT_MS = 15 * 60 * 1000;
+
 function getUserState(userId: string): UserState {
-  return userStates.get(userId) || { step: 'idle' };
+  const state = userStates.get(userId);
+  if (!state) {
+    return { step: 'idle' };
+  }
+  
+  // hotel_ask状態で15分以上経過していたらリセット
+  if (state.step === 'hotel_ask' && state.timestamp) {
+    const elapsed = Date.now() - state.timestamp;
+    if (elapsed > HOTEL_ASK_TIMEOUT_MS) {
+      console.log(`⏰ Hotel ask timeout (${Math.round(elapsed / 60000)}min), resetting state`);
+      userStates.set(userId, { step: 'idle' });
+      return { step: 'idle' };
+    }
+  }
+  
+  return state;
 }
 
 /**
@@ -292,6 +311,10 @@ function isFlightSearchRequest(message: string): boolean {
 }
 
 function setUserState(userId: string, state: UserState): void {
+  // hotel_ask状態の場合はタイムスタンプを記録（タイムアウト管理用）
+  if (state.step === 'hotel_ask') {
+    state.timestamp = Date.now();
+  }
   userStates.set(userId, state);
 }
 
