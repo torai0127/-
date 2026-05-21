@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "notify": "tsx src/scripts/send-notification.ts",
     "test:self": "tsx src/scripts/self-test.ts",
+    "verify:hotel-url": "tsx src/scripts/verify-booking-deep-link.ts",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
@@ -34,6 +35,6 @@
     "typescript": "^5.5.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   }
 }
