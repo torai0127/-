@@ -422,41 +422,11 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     
     let response: string;
     
-    // ホテル提案への応答をチェック（hotel_ask状態の場合）
-    if (state.step === 'hotel_ask') {
-      if (isHotelAffirmative(userMessage)) {
-        console.log('🏨 Hotel affirmative response');
-        const context = state.hotelContext;
-        if (context) {
-          // コンテキストがある場合は入力テンプレートを提示
-          setUserState(userId, { 
-            step: 'hotel_search', 
-            hotelContext: context,
-            hotelSearchData: createHotelContextFromFlight(context),
-          });
-          response = generateHotelInputTemplate(context);
-        } else {
-          setUserState(userId, { step: 'hotel_search' });
-          response = generateHotelInputTemplate();
-        }
-      } else if (isHotelNegative(userMessage)) {
-        console.log('🏨 Hotel declined');
-        setUserState(userId, { step: 'idle' });
-        response = '承知しました！\n\n他にご質問がありましたらお気軽にどうぞ 😊';
-      } else {
-        // 判断できない場合はホテル検索として処理
-        console.log('🏨 Treating as hotel search query');
-        response = await handleHotelQuery(userId, userMessage, state.hotelContext);
-      }
-    }
-    // ホテル検索中（hotel_search状態の場合）
-    else if (state.step === 'hotel_search') {
-      console.log('🏨 Hotel search in progress');
-      response = await handleHotelQuery(userId, userMessage, state.hotelContext);
-    }
+    // 航空券検索のリクエストは常に優先（ホテル検索中でも）
     // リッチメニューから「航空券」とだけ送られた場合 → テンプレート表示
-    else if (isFlightTemplateRequest(userMessage)) {
-      console.log('📋 Template request detected');
+    if (isFlightTemplateRequest(userMessage)) {
+      console.log('📋 Template request detected (resetting hotel state)');
+      setUserState(userId, { step: 'idle' }); // ホテル状態をリセット
       response = getFlightSearchTemplate();
     }
     // エルメからの航空券検索フォーム（全ての条件が揃っている場合）
@@ -481,6 +451,8 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     } else if (userMessage.includes('治安') || userMessage.includes('安全')) {
       response = await handleSafetyQuery(userMessage);
     } else if (isFlightSearchRequest(userMessage)) {
+      // 航空券検索キーワードがある場合はホテル状態をリセット
+      setUserState(userId, { step: 'idle' });
       const flightResult = await handleFlightQuery(userId, userMessage);
       
       // フライト検索が成功したらホテル提案を追加
@@ -491,6 +463,38 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       } else {
         response = flightResult;
       }
+    }
+    // ホテル提案への応答をチェック（hotel_ask状態で「はい」「いいえ」のみ）
+    else if (state.step === 'hotel_ask') {
+      if (isHotelAffirmative(userMessage)) {
+        console.log('🏨 Hotel affirmative response');
+        const context = state.hotelContext;
+        if (context) {
+          setUserState(userId, { 
+            step: 'hotel_search', 
+            hotelContext: context,
+            hotelSearchData: createHotelContextFromFlight(context),
+          });
+          response = generateHotelInputTemplate(context);
+        } else {
+          setUserState(userId, { step: 'hotel_search' });
+          response = generateHotelInputTemplate();
+        }
+      } else if (isHotelNegative(userMessage)) {
+        console.log('🏨 Hotel declined');
+        setUserState(userId, { step: 'idle' });
+        response = '承知しました！\n\n他にご質問がありましたらお気軽にどうぞ 😊';
+      } else {
+        // 「はい」「いいえ」以外の場合は状態をリセットして通常処理
+        console.log('🔄 Resetting hotel_ask state, processing as general query');
+        setUserState(userId, { step: 'idle' });
+        response = await handleGeneralQuery(userId, userMessage);
+      }
+    }
+    // ホテル検索中（hotel_search状態の場合）
+    else if (state.step === 'hotel_search') {
+      console.log('🏨 Hotel search in progress');
+      response = await handleHotelQuery(userId, userMessage, state.hotelContext);
     } else {
       response = await handleGeneralQuery(userId, userMessage);
     }
