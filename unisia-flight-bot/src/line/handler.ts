@@ -445,9 +445,14 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     
     let response: string;
     
+    // ホテル検索中は最優先で処理（航空券検索のキーワードと重複するため）
+    if (state.step === 'hotel_search') {
+      console.log('🏨 Hotel search in progress (priority)');
+      response = await handleHotelQuery(userId, userMessage, state.hotelContext);
+    }
     // 航空券検索のリクエストは常に優先（ホテル検索中でも）
     // リッチメニューから「航空券」とだけ送られた場合 → テンプレート表示
-    if (isFlightTemplateRequest(userMessage)) {
+    else if (isFlightTemplateRequest(userMessage)) {
       console.log('📋 Template request detected (resetting hotel state)');
       setUserState(userId, { step: 'idle' }); // ホテル状態をリセット
       response = getFlightSearchTemplate();
@@ -513,11 +518,6 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
         setUserState(userId, { step: 'idle' });
         response = await handleGeneralQuery(userId, userMessage);
       }
-    }
-    // ホテル検索中（hotel_search状態の場合）
-    else if (state.step === 'hotel_search') {
-      console.log('🏨 Hotel search in progress');
-      response = await handleHotelQuery(userId, userMessage, state.hotelContext);
     } else {
       response = await handleGeneralQuery(userId, userMessage);
     }
