@@ -844,15 +844,25 @@ function isHotelNegative(message: string): boolean {
  */
 async function handleHotelQuery(userId: string, message: string, context?: FlightContext): Promise<string> {
   console.log('🏨 handleHotelQuery started');
+  console.log('📝 User message:', message.substring(0, 100));
+  console.log('📦 Context:', JSON.stringify(context));
   
   const state = getUserState(userId);
   const existingParams = state.hotelSearchData || {};
+  console.log('📦 Existing params:', JSON.stringify(existingParams));
   
   // コンテキストからデフォルト値を設定
   if (context) {
     existingParams.location = existingParams.location || context.destination;
     existingParams.checkIn = existingParams.checkIn || context.departureDate;
-    existingParams.checkOut = existingParams.checkOut || context.returnDate;
+    // returnDateがない場合はdepartureDate + 1日
+    if (!existingParams.checkOut && context.returnDate) {
+      existingParams.checkOut = context.returnDate;
+    } else if (!existingParams.checkOut && context.departureDate) {
+      const depDate = new Date(context.departureDate);
+      depDate.setDate(depDate.getDate() + 1);
+      existingParams.checkOut = depDate.toISOString().split('T')[0];
+    }
     existingParams.adults = existingParams.adults || context.passengers;
   }
   

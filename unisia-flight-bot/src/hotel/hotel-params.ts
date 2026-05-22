@@ -126,6 +126,12 @@ export async function extractHotelParams(
       missingFields: [],
     };
     
+    // チェックアウトが「未定」や空の場合、チェックイン+1日をデフォルトに
+    if ((!result.checkOut || result.checkOut === '未定') && result.checkIn) {
+      result.checkOut = addDays(result.checkIn, 1);
+      console.log(`📅 checkOut was empty/未定, set to ${result.checkOut}`);
+    }
+    
     // 必須フィールドのチェック
     if (!result.location) result.missingFields.push('location');
     if (!result.checkIn) result.missingFields.push('checkIn');
