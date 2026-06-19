@@ -9,6 +9,139 @@ const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+// 国名→都市名のマッピング（天気API用）
+const COUNTRY_TO_CITY: Record<string, string> = {
+  'フィリピン': 'Manila',
+  'マニラ': 'Manila',
+  'セブ': 'Cebu',
+  '韓国': 'Seoul',
+  'ソウル': 'Seoul',
+  '釜山': 'Busan',
+  'タイ': 'Bangkok',
+  'バンコク': 'Bangkok',
+  'プーケット': 'Phuket',
+  '台湾': 'Taipei',
+  '台北': 'Taipei',
+  'ハワイ': 'Honolulu',
+  'ホノルル': 'Honolulu',
+  'グアム': 'Guam',
+  'サイパン': 'Saipan',
+  'オーストラリア': 'Sydney',
+  'シドニー': 'Sydney',
+  'メルボルン': 'Melbourne',
+  'ベトナム': 'Hanoi',
+  'ハノイ': 'Hanoi',
+  'ホーチミン': 'Ho Chi Minh City',
+  'シンガポール': 'Singapore',
+  'アメリカ': 'New York',
+  'ニューヨーク': 'New York',
+  'ロサンゼルス': 'Los Angeles',
+  'フランス': 'Paris',
+  'パリ': 'Paris',
+  'イタリア': 'Rome',
+  'ローマ': 'Rome',
+  'スペイン': 'Madrid',
+  'マドリード': 'Madrid',
+  'ドイツ': 'Berlin',
+  'ベルリン': 'Berlin',
+  'イギリス': 'London',
+  'ロンドン': 'London',
+  '中国': 'Beijing',
+  '北京': 'Beijing',
+  '上海': 'Shanghai',
+  'インド': 'Delhi',
+  'ブラジル': 'Sao Paulo',
+  'メキシコ': 'Mexico City',
+  'カナダ': 'Toronto',
+  'トロント': 'Toronto',
+  'バンクーバー': 'Vancouver',
+  'インドネシア': 'Jakarta',
+  'バリ': 'Bali',
+  'マレーシア': 'Kuala Lumpur',
+  'ニュージーランド': 'Auckland',
+};
+
+/**
+ * 無料天気API（wttr.in）を使って天気情報を取得
+ */
+async function fetchWeatherInfo(country: string): Promise<string | null> {
+  const city = COUNTRY_TO_CITY[country];
+  if (!city) {
+    console.log(`🌍 Unknown country for weather: ${country}`);
+    return null;
+  }
+  
+  try {
+    console.log(`🌤️ Fetching weather for ${city}...`);
+    const response = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`, {
+      headers: { 'Accept-Language': 'ja' },
+    });
+    
+    if (!response.ok) {
+      console.warn(`⚠️ Weather API error: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    const current = data.current_condition?.[0];
+    
+    if (!current) {
+      return null;
+    }
+    
+    const temp = current.temp_C;
+    const feelsLike = current.FeelsLikeC;
+    const humidity = current.humidity;
+    const weatherDesc = current.lang_ja?.[0]?.value || current.weatherDesc?.[0]?.value || '不明';
+    
+    // 3日間の予報
+    const forecast = data.weather?.slice(0, 3).map((day: any) => {
+      const date = day.date;
+      const maxTemp = day.maxtempC;
+      const minTemp = day.mintempC;
+      const desc = day.hourly?.[4]?.lang_ja?.[0]?.value || day.hourly?.[4]?.weatherDesc?.[0]?.value || '';
+      return `📅 ${date}: ${minTemp}〜${maxTemp}°C ${desc}`;
+    }).join('\n') || '';
+    
+    return `🌤️ ${country}（${city}）の天気
+
+【現在の天気】
+🌡️ 気温: ${temp}°C（体感 ${feelsLike}°C）
+💧 湿度: ${humidity}%
+☁️ 状況: ${weatherDesc}
+
+【3日間の予報】
+${forecast}
+
+💡 旅行のポイント
+・現地時間と日本時間の差に注意
+・急な天候変化に備えて折りたたみ傘を
+・最新情報は出発前に再確認を`;
+    
+  } catch (error) {
+    console.error('Weather API error:', error);
+    return null;
+  }
+}
+
+/**
+ * メッセージから天気質問かどうか判定し、国名を抽出
+ */
+function extractWeatherQuery(message: string): string | null {
+  if (!message.includes('天気') && !message.includes('気温') && !message.includes('気候')) {
+    return null;
+  }
+  
+  // 国名・都市名を検出
+  for (const country of Object.keys(COUNTRY_TO_CITY)) {
+    if (message.includes(country)) {
+      return country;
+    }
+  }
+  
+  return null;
+}
+
 // 海外関連のキーワード
 const OVERSEAS_KEYWORDS = [
   '安全', '治安', 'ビザ', 'パスポート', '航空券', '保険',
@@ -1138,43 +1271,35 @@ export async function generateResponse(
   userMessage: string,
   history: ConversationEntry[]
 ): Promise<string> {
-  // まずFAQから検索（会話履歴も考慮）
+  // 天気質問を最優先で処理（無料API使用）
+  const weatherCountry = extractWeatherQuery(userMessage);
+  if (weatherCountry) {
+    const weatherResponse = await fetchWeatherInfo(weatherCountry);
+    if (weatherResponse) {
+      return weatherResponse;
+    }
+    // 天気APIが失敗した場合は一般的な情報を返す
+    return `🌤️ ${weatherCountry}の天気情報
+
+申し訳ございません、現在天気情報を取得できませんでした。
+
+📱 おすすめの天気アプリ
+・Weather.com
+・AccuWeather
+・tenki.jp（日本語）
+
+これらのアプリで「${weatherCountry}」と検索すると、詳しい天気予報が確認できます！`;
+  }
+  
+  // FAQから検索（会話履歴も考慮）
   const faqResponse = searchFAQWithContext(userMessage, history);
   if (faqResponse) {
     return faqResponse;
   }
   
-  // OpenAI未設定時のフォールバック応答
-  if (!openai) {
-    return getDefaultResponse(userMessage, history);
-  }
-
-  const formattedHistory = history.flatMap((entry) => [
-    { role: 'user' as const, content: entry.userMessage },
-    { role: 'assistant' as const, content: entry.botResponse },
-  ]);
-
-  const messages = buildPromptWithHistory(userMessage, formattedHistory);
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      max_tokens: 500,
-      temperature: 0.7,
-    });
-
-    const response = completion.choices[0]?.message?.content;
-    
-    if (!response) {
-      return getDefaultResponse(userMessage, history);
-    }
-
-    return response;
-  } catch (error) {
-    console.error('OpenAI API error:', error);
-    return getDefaultResponse(userMessage, history);
-  }
+  // OpenAI不使用 - デフォルト応答を返す
+  return getDefaultResponse(userMessage, history);
+  
 }
 
 /**

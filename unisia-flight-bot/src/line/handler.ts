@@ -1,6 +1,6 @@
 import { WebhookEvent, MessageEvent, TextMessage } from '@line/bot-sdk';
 import { lineClient } from './client.js';
-import { generateFlightResponse, extractFlightParams } from '../ai/openai.js';
+// OpenAI不使用 - テキスト解析のみで動作
 import { 
   generateGoogleFlightsQueryUrl, 
 } from '../flight/google-flights.js';
@@ -677,27 +677,9 @@ async function handleSafetyQuery(message: string): Promise<string> {
 async function handleFlightQuery(userId: string, message: string): Promise<string> {
   console.log('🔍 handleFlightQuery started');
   
-  // まず直接テキストから情報を抽出を試みる
-  const directParams = extractFlightParamsFromText(message);
-  console.log('📋 Direct params:', JSON.stringify(directParams));
-  
-  // OpenAIでも抽出を試みる（失敗してもdirectParamsで続行）
-  let aiParams: any = {};
-  try {
-    aiParams = await extractFlightParams(message);
-    console.log('🤖 AI params:', JSON.stringify(aiParams));
-  } catch (error) {
-    console.warn('⚠️ OpenAI extraction failed, using direct params only:', error);
-  }
-  
-  // 両方をマージ（directParamsを優先）
-  const params = {
-    ...aiParams,
-    ...directParams,
-    destination: directParams.destination || aiParams?.destination,
-    origin: directParams.origin || aiParams?.origin,
-  };
-  console.log('📦 Merged params:', JSON.stringify(params));
+  // テキストから直接情報を抽出（OpenAI不使用）
+  const params = extractFlightParamsFromText(message);
+  console.log('📋 Extracted params:', JSON.stringify(params));
   
   const surveyData = getSurveyResponse(userId);
   
@@ -818,10 +800,29 @@ async function handleFlightQuery(userId: string, message: string): Promise<strin
 }
 
 async function handleGeneralQuery(userId: string, message: string): Promise<string> {
-  const surveyData = getSurveyResponse(userId);
-  const history = getConversationHistory(userId, 5);
-  
-  return await generateFlightResponse(message, history, { surveyData });
+  // OpenAI不使用 - シンプルな案内メッセージを返す
+  return `ご連絡ありがとうございます！
+
+航空券をお探しの場合は、以下の形式でお知らせください：
+
+━━━━━━━━━━━━━━━
+いきたい地域: 
+いきたい時期: 
+期間: 
+人数: 
+出発空港: 
+片道/往復: 
+━━━━━━━━━━━━━━━
+
+例）
+いきたい地域: フィリピン
+いきたい時期: 7月15日〜20日
+期間: 5泊6日
+人数: 2人
+出発空港: 福岡
+片道/往復: 往復
+
+このフォーマットで送っていただければ、最安値の航空券検索リンクをお作りします！`;
 }
 
 /**
