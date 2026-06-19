@@ -2,7 +2,7 @@
  * 自社ボットへの転送
  */
 
-import { forwardWebhook, ForwardResult } from './base.js';
+import { forwardWebhook, ForwardResult, normalizeBotWebhookUrl } from './base.js';
 
 /**
  * 海外相談ボットへ転送
@@ -11,9 +11,9 @@ export async function forwardToConsultationBot(
   body: any,
   lineChannelSecret?: string
 ): Promise<ForwardResult> {
-  const url = process.env.CONSULTATION_BOT_URL;
+  const rawUrl = process.env.CONSULTATION_BOT_URL;
   
-  if (!url) {
+  if (!rawUrl) {
     console.error('CONSULTATION_BOT_URL not configured');
     return {
       success: false,
@@ -21,7 +21,8 @@ export async function forwardToConsultationBot(
       error: 'CONSULTATION_BOT_URL not configured',
     };
   }
-  
+
+  const url = normalizeBotWebhookUrl(rawUrl);
   console.log(`📤 Forwarding to Consultation Bot: ${url}`);
   
   return forwardWebhook({
@@ -39,9 +40,9 @@ export async function forwardToFlightBot(
   body: any,
   lineChannelSecret?: string
 ): Promise<ForwardResult> {
-  const url = process.env.FLIGHT_BOT_URL;
+  const rawUrl = process.env.FLIGHT_BOT_URL;
   
-  if (!url) {
+  if (!rawUrl) {
     console.error('FLIGHT_BOT_URL not configured');
     return {
       success: false,
@@ -49,7 +50,8 @@ export async function forwardToFlightBot(
       error: 'FLIGHT_BOT_URL not configured',
     };
   }
-  
+
+  const url = normalizeBotWebhookUrl(rawUrl);
   console.log(`📤 Forwarding to Flight Bot: ${url}`);
   
   return forwardWebhook({

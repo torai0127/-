@@ -73,7 +73,7 @@ function inferPostbackTarget(data: string): ForwardTarget | null {
   if (data.includes('menu_study') || data.includes('study_abroad')) {
     return 'consultation';
   }
-  if (data.includes('menu_emergency') || data.includes('emergency')) {
+  if (data.includes('menu_emergency')) {
     return 'consultation';
   }
   return null;

@@ -20,6 +20,22 @@ export interface ForwardResult {
 }
 
 /**
+ * 転送先URLを正規化（/webhook 付きHTTPS URLに統一）
+ */
+export function normalizeBotWebhookUrl(url: string): string {
+  let normalized = url.trim();
+  if (!normalized) return normalized;
+  if (!normalized.startsWith('http')) {
+    normalized = `https://${normalized}`;
+  }
+  normalized = normalized.replace(/\/$/, '');
+  if (!normalized.endsWith('/webhook')) {
+    normalized = `${normalized}/webhook`;
+  }
+  return normalized;
+}
+
+/**
  * Webhookを転送
  */
 export async function forwardWebhook(request: ForwardRequest): Promise<ForwardResult> {
@@ -45,7 +61,7 @@ export async function forwardWebhook(request: ForwardRequest): Promise<ForwardRe
     
     const response = await axios.post(request.url, request.body, {
       headers,
-      timeout: 25000, // 25秒タイムアウト（LINEの制限内）
+      timeout: 55000, // Renderコールドスタート対策
     });
     
     return {

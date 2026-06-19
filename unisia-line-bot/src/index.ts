@@ -87,4 +87,20 @@ app.listen(PORT, async () => {
       console.error(`❌ LINE token INVALID: ${tokenStatus.error}`);
     }
   }
+
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+  if (RENDER_URL) {
+    const PING_INTERVAL = 10 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        const response = await fetch(`${RENDER_URL}/health`);
+        if (response.ok) {
+          console.log('💓 Keep-alive ping successful');
+        }
+      } catch {
+        console.log('⚠️ Keep-alive ping failed');
+      }
+    }, PING_INTERVAL);
+    console.log('💓 Keep-alive enabled: pinging every 10 minutes');
+  }
 });

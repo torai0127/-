@@ -261,11 +261,6 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       return;
     }
 
-    if (shouldSkipMenuWelcome(userId, mode)) {
-      console.log(`⏭️ Skipping duplicate postback welcome for mode: ${mode}`);
-      return;
-    }
-
     setUserState(userId, mode);
     const initialMessage = getRichMenuInitialMessage(mode);
 

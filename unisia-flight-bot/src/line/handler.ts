@@ -409,22 +409,34 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     
     console.log(`📩 Postback received from ${userId}: ${data}`);
     
-    let response: string;
-    
-    // 航空券検索のpostback
-    if (data === 'action=flight_search' || data.includes('menu_flight') || data === 'menu_flight_ticket') {
-      response = getFlightSearchTemplate();
-    } else if (data.includes('line_support') || data.includes('insurance') || data.includes('emergency') || data.includes('study') || data.includes('job')) {
-      // 相談系postbackは相談BOT側で処理される想定
-      return;
-    } else {
-      response = 'メニューを選択してください。';
+    try {
+      let response: string;
+      
+      // 航空券検索のpostback
+      if (data === 'action=flight_search' || data.includes('menu_flight') || data === 'menu_flight_ticket') {
+        response = getFlightSearchTemplate();
+      } else if (data.includes('line_support') || data.includes('insurance') || data.includes('emergency') || data.includes('study') || data.includes('job')) {
+        // 相談系postbackは相談BOT側で処理される想定
+        return;
+      } else {
+        response = 'メニューを選択してください。';
+      }
+      
+      await lineClient.replyMessage({
+        replyToken: postbackEvent.replyToken,
+        messages: [{ type: 'text', text: response }],
+      });
+    } catch (error) {
+      console.error('❌ Postback reply failed:', error);
+      try {
+        await lineClient.replyMessage({
+          replyToken: postbackEvent.replyToken,
+          messages: [{ type: 'text', text: '少し時間をおいて、もう一度リッチメニューからお試しください ✈️' }],
+        });
+      } catch {
+        // replyToken expired
+      }
     }
-    
-    await lineClient.replyMessage({
-      replyToken: postbackEvent.replyToken,
-      messages: [{ type: 'text', text: response }],
-    });
     
     return;
   }

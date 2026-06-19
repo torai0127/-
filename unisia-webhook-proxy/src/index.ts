@@ -110,25 +110,27 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
   }
   
   // 2. エルメにも転送（顧客管理・ステップ配信のため）
-  // ボットがpostbackで挨拶を返すメニューはElmeへ転送しない（二重送信防止）
   const skipElmeForBotMenuPostback =
     event.type === 'postback' &&
-    (routingResult.target === 'consultation' || routingResult.target === 'flight');
+    (routingResult.target === 'consultation' || routingResult.target === 'flight') &&
+    success;
 
   const elmeUrl = process.env.ELME_WEBHOOK_URL;
-  if (elmeUrl && !skipElmeForBotMenuPostback) {
-    try {
-      const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
-      if (elmeResult.success) {
-        console.log(`✅ Also forwarded to Elme (${elmeResult.responseTimeMs}ms)`);
-      } else {
-        console.warn(`⚠️ Failed to forward to Elme: ${elmeResult.error}`);
+  if (elmeUrl) {
+    if (!skipElmeForBotMenuPostback) {
+      try {
+        const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
+        if (elmeResult.success) {
+          console.log(`✅ Also forwarded to Elme (${elmeResult.responseTimeMs}ms)`);
+        } else {
+          console.warn(`⚠️ Failed to forward to Elme: ${elmeResult.error}`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Elme forward error:', error);
       }
-    } catch (error) {
-      console.warn('⚠️ Elme forward error:', error);
+    } else {
+      console.log(`⏭️ Skipped Elme forward (bot handled postback: ${routingResult.target})`);
     }
-  } else if (skipElmeForBotMenuPostback) {
-    console.log(`⏭️ Skipped Elme forward for bot menu postback (${routingResult.target})`);
   }
   
   // ログを保存
@@ -147,7 +149,19 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
   if (success) {
     console.log(`✅ Forwarded to ${routingResult.target} (${responseTimeMs}ms)`);
   } else {
-    console.error(`❌ Failed to forward to ${routingResult.target}`);
+    console.error(`❌ Failed to forward to ${routingResult.target}${responseTimeMs ? ` (${responseTimeMs}ms)` : ''}`);
+    // BOT転送失敗時はElmeへフォールバック（無反応防止）
+    if (elmeUrl && event.type === 'postback' && (routingResult.target === 'consultation' || routingResult.target === 'flight')) {
+      console.warn(`⚠️ Falling back to Elme after bot forward failure`);
+      try {
+        const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
+        if (elmeResult.success) {
+          console.log(`✅ Elme fallback succeeded (${elmeResult.responseTimeMs}ms)`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Elme fallback error:', error);
+      }
+    }
   }
 }
 
