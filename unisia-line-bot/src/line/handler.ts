@@ -12,6 +12,7 @@ import {
   isInsuranceTemplateInput,
   isMenuTriggerMessage,
   isElmeAutomatedWelcome,
+  isElmeAutomatedInsuranceWelcome,
   shouldSkipMenuWelcome,
   markMenuWelcomeSent,
   addToManualQueue,
@@ -20,6 +21,7 @@ import {
 import {
   getInsuranceWelcomeMessage,
   handleInsuranceMessage,
+  isInsuranceTemplateRequest,
 } from '../handlers/insurance.js';
 import {
   getConsultationWelcomeMessage,
@@ -261,6 +263,12 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     return;
   }
 
+  if (isElmeAutomatedInsuranceWelcome(userMessage)) {
+    console.log(`⏭️ Skipping Elme automated insurance welcome echo`);
+    setUserState(userId, 'insurance', { step: 'waiting_template' });
+    return;
+  }
+
   try {
     // 現在のユーザー状態を取得
     let state = getUserState(userId);
@@ -274,8 +282,30 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       currentMode = 'idle';
     }
     
+    // ★ 保険テンプレ再表示（相談テンプレより先に判定）
+    if (
+      isInsuranceTemplateRequest(userMessage) ||
+      (currentMode === 'insurance' && userMessage.trim() === 'テンプレート')
+    ) {
+      const response = getInsuranceWelcomeMessage();
+      setUserState(userId, 'insurance', { step: 'waiting_template' });
+      saveConversation({
+        lineUserId: userId,
+        userMessage,
+        botResponse: response,
+        timestamp: new Date().toISOString(),
+      });
+      if (lineClient) {
+        await lineClient.replyMessage({
+          replyToken: messageEvent.replyToken,
+          messages: [{ type: 'text', text: response }],
+        });
+      }
+      return;
+    }
+
     // ★ 相談テンプレ再表示
-    if (isConsultationTemplateRequest(userMessage)) {
+    if (isConsultationTemplateRequest(userMessage) && currentMode !== 'insurance') {
       const response = getConsultationWelcomeMessage();
       setUserState(userId, 'overseas_qa');
       saveConversation({

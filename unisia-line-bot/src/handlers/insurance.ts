@@ -73,43 +73,116 @@ const CREDIT_CARD_INSURANCE: Record<string, {
   },
 };
 
-// おすすめ海外保険
-const RECOMMENDED_INSURANCE = [
+// おすすめ海外保険（公式申込URL付き）
+interface RecommendedInsurance {
+  name: string;
+  price: string;
+  features: string[];
+  url: string;
+  budgetHint?: 'low' | 'mid' | 'high';
+}
+
+const RECOMMENDED_INSURANCE: RecommendedInsurance[] = [
   {
     name: '損保ジャパン「新・海外旅行保険off!」',
     price: '約1,000円〜/週',
     features: ['ネット申込で割引', 'カスタマイズ可能', '24時間日本語対応'],
+    url: 'https://www.sompo-japan.co.jp/kinsurance/travel/off/',
+    budgetHint: 'mid',
   },
   {
     name: 'エイチ・エス損保「たびとも」',
     price: '約500円〜/週',
     features: ['業界最安クラス', 'シンプルプラン', '当日申込OK'],
+    url: 'https://www.hs-hoken.jp/products/travel/tabidomo/',
+    budgetHint: 'low',
   },
   {
-    name: 'ジェイアイ傷害火災「t@biho」',
+    name: 'ジェイアイ傷害火災「t@biho（タビホ）」',
     price: '約800円〜/週',
     features: ['リピーター割引', 'ファミリープラン', 'カスタマイズ豊富'],
+    url: 'https://www.jihoken.co.jp/personal/travel/',
+    budgetHint: 'mid',
+  },
+  {
+    name: 'チューリッヒ「スーパー海外保険」',
+    price: '約1,200円〜/週',
+    features: ['治療費用1億円', '救援者費用充実', '長期滞在向け'],
+    url: 'https://www.zurich.co.jp/car-and-leisure/travel/super/',
+    budgetHint: 'high',
   },
 ];
 
 /**
- * 保険相談の初期メッセージ
+ * 保険相談の初期メッセージ（コピペ用テンプレート）
  */
 export function getInsuranceWelcomeMessage(): string {
-  return `🛡️ 海外保険の無料相談をご希望ですね！
+  return `🛡️ 海外保険案内サポート
 
-下記テンプレートをご記入ください！
+下のテンプレートをコピーして、
+必要な情報を入力してください👇
 
-・渡航期間
-▶︎（例：2週間、3ヶ月、1年）
+━━━━━━━━━━━━━━━
 
-・予算（0円もOK）
-▶︎（例：5,000円、0円）
+渡航期間: 
+予算（0円もOK）: 
+到着国: 
 
-・到着国
-▶︎（例：フィリピン、アメリカ）
+━━━━━━━━━━━━━━━
 
-ご記入いただければ、最適な保険プランをご提案します✨`;
+【入力例①】予算あり
+渡航期間: 2週間
+予算（0円もOK）: 5,000円
+到着国: フィリピン
+
+【入力例②】予算0円（クレカ活用）
+渡航期間: 3ヶ月
+予算（0円もOK）: 0円
+到着国: オーストラリア
+
+━━━━━━━━━━━━━━━
+
+💡 ご記入後、おすすめ保険会社の公式リンクをお送りします
+「保険テンプレ」で再表示できます`;
+}
+
+/**
+ * 保険テンプレ再表示リクエストか
+ */
+export function isInsuranceTemplateRequest(message: string): boolean {
+  const normalized = message.trim();
+  if (normalized === '保険テンプレ' || normalized === '保険テンプレート') return true;
+  if (normalized.includes('保険') && normalized.includes('テンプレ')) return true;
+  return false;
+}
+
+/**
+ * おすすめ保険リンクブロックを生成
+ */
+export function formatInsuranceLinksBlock(highlightBudget?: string): string {
+  let block = `🔗 おすすめ海外旅行保険（公式サイト）\n\n`;
+
+  let budgetNum: number | null = null;
+  if (highlightBudget) {
+    const m = highlightBudget.match(/(\d+)/);
+    if (m) budgetNum = parseInt(m[1], 10);
+  }
+
+  for (const insurance of RECOMMENDED_INSURANCE) {
+    const isRecommended =
+      budgetNum !== null &&
+      ((budgetNum < 3000 && insurance.budgetHint === 'low') ||
+        (budgetNum >= 3000 && budgetNum < 10000 && insurance.budgetHint === 'mid') ||
+        (budgetNum >= 10000 && insurance.budgetHint === 'high'));
+
+    block += isRecommended ? `⭐ ` : '';
+    block += `【${insurance.name}】\n`;
+    block += `💰 ${insurance.price}\n`;
+    block += `✅ ${insurance.features.join('\n✅ ')}\n`;
+    block += `👉 ${insurance.url}\n\n`;
+  }
+
+  return block;
 }
 
 /**
@@ -117,8 +190,16 @@ export function getInsuranceWelcomeMessage(): string {
  */
 export function parseInsuranceTemplate(message: string): InsuranceData | null {
   const data: InsuranceData = { step: 'waiting_template' };
-  
-  // 行ごとに分割して解析
+
+  // コロン形式（相談BOTと同じ）
+  const periodColon = message.match(/渡航期間[:：]\s*([^\n]+)/);
+  const budgetColon = message.match(/予算[^:：\n]*[:：]\s*([^\n]+)/);
+  const destColon = message.match(/到着国[:：]\s*([^\n]+)/);
+  if (periodColon?.[1]?.trim()) data.travelPeriod = periodColon[1].trim();
+  if (budgetColon?.[1]?.trim()) data.budget = budgetColon[1].trim();
+  if (destColon?.[1]?.trim()) data.destination = destColon[1].trim();
+
+  // 行ごとに分割して解析（▶形式）
   const lines = message.split('\n');
   
   for (let i = 0; i < lines.length; i++) {
@@ -325,9 +406,10 @@ export function generateCreditCardInsuranceRecommendation(
     if (daysNeeded > totalCoverage) {
       response += `⚠️ 渡航期間が${data.travelPeriod}の場合、クレカだけでは足りない可能性があります。\n`;
       response += `追加で海外旅行保険のご検討をおすすめします。\n\n`;
+      response += formatInsuranceLinksBlock(data.budget);
     }
   }
-  
+
   response += `他にご不明点があればお気軽にどうぞ！`;
   
   return response;
@@ -342,33 +424,27 @@ export function generatePaidInsuranceRecommendation(data: InsuranceData): string
   response += `・渡航期間: ${data.travelPeriod}\n`;
   response += `・予算: ${data.budget}\n`;
   response += `・到着国: ${data.destination}\n\n`;
-  
-  response += `📋 おすすめ保険プラン\n\n`;
-  
-  for (const insurance of RECOMMENDED_INSURANCE) {
-    response += `【${insurance.name}】\n`;
-    response += `💰 ${insurance.price}\n`;
-    response += `✅ ${insurance.features.join('\n✅ ')}\n\n`;
-  }
-  
+
+  response += formatInsuranceLinksBlock(data.budget);
+
   response += `📌 選び方のポイント\n\n`;
   response += `・治療費用は最低300万円以上がおすすめ\n`;
-  response += `・${data.destination}はクレカ対応の病院が多い\n`;
+  response += `・${data.destination}渡航はクレカ対応の病院が多い\n`;
   response += `・キャッシュレス対応があると安心\n\n`;
-  
-  // 予算に応じたアドバイス
+
   const budgetMatch = data.budget?.match(/(\d+)/);
   if (budgetMatch) {
-    const budget = parseInt(budgetMatch[1]);
+    const budget = parseInt(budgetMatch[1], 10);
     if (budget < 3000) {
       response += `💡 予算${data.budget}なら「たびとも」がコスパ最強です！\n`;
+      response += `👉 https://www.hs-hoken.jp/products/travel/tabidomo/\n`;
     } else if (budget < 10000) {
       response += `💡 予算${data.budget}なら「off!」でカスタマイズがおすすめ！\n`;
+      response += `👉 https://www.sompo-japan.co.jp/kinsurance/travel/off/\n`;
     }
   }
-  
-  response += `\n詳しいプランのご相談は、スタッフが対応いたします。\nお気軽にお問い合わせください！`;
-  
+
+  response += `\n※リンク先は各社公式サイトです。内容は最新情報をご確認ください。`;
   return response;
 }
 
@@ -380,6 +456,11 @@ export function handleInsuranceMessage(
   message: string,
   currentData?: InsuranceData
 ): string {
+  if (isInsuranceTemplateRequest(message)) {
+    setUserState(lineUserId, 'insurance', { step: 'waiting_template' });
+    return getInsuranceWelcomeMessage();
+  }
+
   // 新規または待機中の場合、テンプレート解析を試みる
   if (!currentData || currentData.step === 'waiting_template') {
     const parsed = parseInsuranceTemplate(message);
@@ -396,7 +477,7 @@ export function handleInsuranceMessage(
     }
     
     // テンプレートが不完全な場合
-    return `📝 情報が不足しています。\n\n以下のテンプレートに沿ってご記入ください：\n\n・渡航期間\n▶︎\n\n・予算（0円もOK）\n▶︎\n\n・到着国\n▶︎`;
+    return getInsuranceWelcomeMessage();
   }
   
   // クレカ確認中の場合

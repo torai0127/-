@@ -126,6 +126,16 @@ export function isElmeAutomatedWelcome(message: string): boolean {
 }
 
 /**
+ * エルメ自動配信の保険挨拶文か（BOT側で再返信しない）
+ */
+export function isElmeAutomatedInsuranceWelcome(message: string): boolean {
+  if (message.includes('海外保険の無料相談')) return true;
+  if (message.includes('最適な保険プランをご提案')) return true;
+  if (message.includes('保険プラン') && message.includes('提案します')) return true;
+  return false;
+}
+
+/**
  * リッチメニューのメニュー文言かどうか（初回挨拶用）
  * ユーザーの実際の質問と区別する
  */
