@@ -11,6 +11,9 @@ import {
   detectModeFromKeyword,
   isInsuranceTemplateInput,
   isMenuTriggerMessage,
+  isElmeAutomatedWelcome,
+  shouldSkipMenuWelcome,
+  markMenuWelcomeSent,
   addToManualQueue,
   ConversationMode,
 } from '../db/conversation-state.js';
@@ -215,15 +218,21 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     } else if (data.includes('line_support') || data.includes('menu_line')) {
       mode = 'overseas_qa';
     }
-    
+
+    if (shouldSkipMenuWelcome(userId, mode)) {
+      console.log(`⏭️ Skipping duplicate postback welcome for mode: ${mode}`);
+      return;
+    }
+
     setUserState(userId, mode);
     const initialMessage = getRichMenuInitialMessage(mode);
-    
+
     if (initialMessage) {
       await lineClient.replyMessage({
         replyToken: postbackEvent.replyToken,
         messages: [{ type: 'text', text: initialMessage }],
       });
+      markMenuWelcomeSent(userId, mode);
       console.log(`📤 Postback reply sent for mode: ${mode}`);
     }
     return;
@@ -244,6 +253,13 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
 
   const userMessage = textMessage.text;
   console.log(`📩 Consultation Bot received from ${userId}: ${userMessage}`);
+
+  // エルメ自動配信の挨拶文は再返信しない（postback直後の重複防止）
+  if (isElmeAutomatedWelcome(userMessage)) {
+    console.log(`⏭️ Skipping Elme automated welcome echo`);
+    setUserState(userId, 'overseas_qa');
+    return;
+  }
 
   try {
     // 現在のユーザー状態を取得
@@ -352,9 +368,15 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
 
       // メニュー文言のときだけ挨拶を返す（質問文は下の通常処理へ）
       if (isMenuTriggerMessage(userMessage) && (currentMode !== newMode || currentMode === 'idle')) {
+        if (shouldSkipMenuWelcome(userId, newMode)) {
+          console.log(`⏭️ Skipping duplicate menu welcome for mode: ${newMode}`);
+          setUserState(userId, newMode);
+          return;
+        }
+
         console.log(`🔄 Mode switch (menu): ${currentMode} -> ${newMode}`);
         setUserState(userId, newMode);
-        
+
         const initialMessage = getRichMenuInitialMessage(newMode);
         
         saveConversation({
@@ -369,6 +391,7 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
             replyToken: messageEvent.replyToken,
             messages: [{ type: 'text', text: initialMessage }],
           });
+          markMenuWelcomeSent(userId, newMode);
           console.log(`📤 Initial message for mode ${newMode}`);
         }
         return;

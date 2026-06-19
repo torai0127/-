@@ -20,6 +20,9 @@ export interface UserState {
 // 10分のタイムアウト（ミリ秒）
 const CONVERSATION_TIMEOUT_MS = 10 * 60 * 1000;
 
+// メニュー挨拶の重複防止（ミリ秒）
+const MENU_WELCOME_DEDUP_MS = 60 * 1000;
+
 /**
  * ユーザーの会話状態を取得
  */
@@ -89,6 +92,40 @@ export function resetUserState(lineUserId: string): void {
 }
 
 /**
+ * 直近で同じモードのメニュー挨拶を送ったか（重複防止）
+ */
+export function shouldSkipMenuWelcome(lineUserId: string, mode: ConversationMode): boolean {
+  const state = getUserState(lineUserId);
+  const lastAt = state?.modeData?.lastMenuWelcomeAt;
+  if (!lastAt || state?.currentMode !== mode) return false;
+  const elapsed = Date.now() - new Date(lastAt).getTime();
+  return elapsed < MENU_WELCOME_DEDUP_MS;
+}
+
+/**
+ * メニュー挨拶送信時刻を記録
+ */
+export function markMenuWelcomeSent(lineUserId: string, mode: ConversationMode): void {
+  const existing = getUserState(lineUserId);
+  setUserState(lineUserId, mode, {
+    ...(existing?.modeData || {}),
+    lastMenuWelcomeAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * エルメ自動配信の挨拶文か（BOT側で再返信しない）
+ */
+export function isElmeAutomatedWelcome(message: string): boolean {
+  if (message.includes('AIサポートで即回答')) return true;
+  if (message.includes('何でもお気軽にご質問')) return true;
+  if (message.includes('ご連絡ありがとうございます') && message.includes('質問等あれば')) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * リッチメニューのメニュー文言かどうか（初回挨拶用）
  * ユーザーの実際の質問と区別する
  */
@@ -106,6 +143,7 @@ export function isMenuTriggerMessage(message: string): boolean {
   if (message.includes('渡航期間') && message.includes('予算') && message.includes('到着国')) {
     return true;
   }
+  if (isElmeAutomatedWelcome(message)) return true;
   return false;
 }
 

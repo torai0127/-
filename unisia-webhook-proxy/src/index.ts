@@ -109,9 +109,14 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
     }
   }
   
-  // 2. エルメにも常に転送（顧客管理・リッチメニュー・ステップ配信のため）
+  // 2. エルメにも転送（顧客管理・ステップ配信のため）
+  // ボットがpostbackで挨拶を返すメニューはElmeへ転送しない（二重送信防止）
+  const skipElmeForBotMenuPostback =
+    event.type === 'postback' &&
+    (routingResult.target === 'consultation' || routingResult.target === 'flight');
+
   const elmeUrl = process.env.ELME_WEBHOOK_URL;
-  if (elmeUrl) {
+  if (elmeUrl && !skipElmeForBotMenuPostback) {
     try {
       const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
       if (elmeResult.success) {
@@ -122,6 +127,8 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
     } catch (error) {
       console.warn('⚠️ Elme forward error:', error);
     }
+  } else if (skipElmeForBotMenuPostback) {
+    console.log(`⏭️ Skipped Elme forward for bot menu postback (${routingResult.target})`);
   }
   
   // ログを保存
