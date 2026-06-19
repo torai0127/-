@@ -74,6 +74,21 @@ function routePostback(event: PostbackEvent, userId: string | null): RoutingResu
 }
 
 /**
+ * 航空券検索フォーム（テンプレート）かどうか判定
+ * これらのキーワードはモードに優先して航空券ボットに転送
+ */
+function isFlightSearchForm(text: string): boolean {
+  // 「いきたい地域」「いきたい時期」「期間」「泊」などが複数含まれている場合
+  const flightFormKeywords = ['いきたい地域', '行きたい地域', 'いきたい時期', '行きたい時期', '出発空港'];
+  const hasFormKeyword = flightFormKeywords.some(kw => text.includes(kw));
+  
+  // 「○泊」パターンも航空券検索フォーム
+  const hasStayPattern = /\d+泊/.test(text);
+  
+  return hasFormKeyword || hasStayPattern;
+}
+
+/**
  * テキストメッセージのルーティング
  */
 function routeTextMessage(event: MessageEvent, userId: string | null): RoutingResult {
@@ -108,6 +123,19 @@ function routeTextMessage(event: MessageEvent, userId: string | null): RoutingRe
         newMode,
       };
     }
+  }
+  
+  // ★ 航空券検索フォームは最優先でflightに転送（モードを無視）
+  if (isFlightSearchForm(text)) {
+    if (userId) {
+      setUserMode(userId, 'flight');
+    }
+    return {
+      target: 'flight',
+      reason: 'flight search form (priority)',
+      shouldUpdateMode: true,
+      newMode: 'flight',
+    };
   }
   
   // 現在のモードをチェック
