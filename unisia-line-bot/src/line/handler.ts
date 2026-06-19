@@ -73,6 +73,18 @@ function isGeneralOverseasQuestion(message: string): boolean {
   return OVERSEAS_QUESTION_KEYWORDS.some(kw => message.toLowerCase().includes(kw.toLowerCase()));
 }
 
+/** 航空券BOT向けメッセージ（誤着陸時は相談BOTで処理しない） */
+function isFlightBotMessage(message: string): boolean {
+  const flightKeywords = [
+    'いきたい地域', '行きたい地域', 'いきたい時期', '行きたい時期',
+    '出発空港', '片道/往復', '格安購入券', '格安航空券', '航空券サポート',
+  ];
+  if (flightKeywords.some(kw => message.includes(kw))) return true;
+  if (message.includes('チェックイン') && message.includes('チェックアウト')) return true;
+  if (message.includes('場所:') && message.includes('大人:')) return true;
+  return false;
+}
+
 /**
  * リッチメニューの初期メッセージを返す
  */
@@ -294,6 +306,12 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
   if (isElmeAutomatedInsuranceWelcome(userMessage)) {
     console.log(`⏭️ Skipping Elme automated insurance welcome echo`);
     setUserState(userId, 'insurance', { step: 'waiting_template' });
+    return;
+  }
+
+  // 航空券・ホテルフローは航空券BOT管轄（誤着陸時は無視）
+  if (isFlightBotMessage(userMessage)) {
+    console.log(`⏭️ Ignoring flight/hotel message on consultation bot`);
     return;
   }
 

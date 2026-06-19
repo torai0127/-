@@ -124,15 +124,35 @@ function routePostback(event: PostbackEvent, userId: string | null): RoutingResu
  * これらのキーワードはモードに優先して航空券ボットに転送
  */
 function isFlightSearchForm(text: string): boolean {
-  const flightFormKeywords = ['いきたい地域', '行きたい地域', 'いきたい時期', '行きたい時期', '出発空港'];
+  const flightFormKeywords = [
+    'いきたい地域', '行きたい地域', 'いきたい時期', '行きたい時期',
+    '出発空港', '片道/往復',
+  ];
   const hasFormKeyword = flightFormKeywords.some(kw => text.includes(kw));
   const hasStayPattern = /\d+泊/.test(text);
   return hasFormKeyword || hasStayPattern;
 }
 
+/** ホテル検索フォーム（航空券フロー続き） */
+function isHotelSearchForm(text: string): boolean {
+  if (text.includes('チェックイン') && text.includes('チェックアウト')) return true;
+  if (text.includes('場所:') && (text.includes('大人:') || text.includes('部屋数:'))) return true;
+  return false;
+}
+
+/** 航空券BOT管轄のメッセージ（相談BOTへ流さない） */
+function isFlightBotMessage(text: string): boolean {
+  if (isFlightSearchForm(text) || isHotelSearchForm(text)) return true;
+  const shortFlightReplies = ['はい', 'いいえ', 'yes', 'no'];
+  if (shortFlightReplies.includes(text.toLowerCase()) || shortFlightReplies.includes(text)) {
+    return true; // ホテル提案への返答（flightモードと併用）
+  }
+  return false;
+}
+
 /** 海外Q&A（天気・治安など）— flightモード中でも相談BOTへ */
 function isConsultationQuestion(text: string): boolean {
-  if (isFlightSearchForm(text)) return false;
+  if (isFlightSearchForm(text) || isHotelSearchForm(text)) return false;
 
   const qaKeywords = [
     '天気', '気温', '気候', '季節',
@@ -150,7 +170,7 @@ function isConsultationQuestion(text: string): boolean {
     'フィリピン', '韓国', 'タイ', '台湾', 'ハワイ', 'グアム',
     'オーストラリア', 'ベトナム', 'シンガポール', 'アメリカ',
   ];
-  if (countries.some(c => text.includes(c)) && !text.includes('いきたい')) {
+  if (countries.some(c => text.includes(c)) && !text.includes('いきたい') && !text.includes('チェックイン')) {
     return true;
   }
 
@@ -224,6 +244,30 @@ function routeTextMessage(event: MessageEvent, userId: string | null): RoutingRe
       shouldUpdateMode: true,
       newMode: 'flight',
     };
+  }
+
+  // ★ ホテル検索フォーム（航空券→ホテルフロー）
+  if (isHotelSearchForm(text)) {
+    if (userId) setUserMode(userId, 'flight');
+    return {
+      target: 'flight',
+      reason: 'hotel search form (flight flow)',
+      shouldUpdateMode: true,
+      newMode: 'flight',
+    };
+  }
+
+  // ★ flightモード中は「はい」等の短い返答も航空券BOTへ（ホテル提案フロー）
+  if (userId) {
+    const currentMode = getUserMode(userId);
+    if (currentMode === 'flight' && isFlightBotMessage(text) && !isConsultationMenuTrigger(text)) {
+      touchUserMode(userId);
+      return {
+        target: 'flight',
+        reason: 'sticky flight mode (hotel flow)',
+        shouldUpdateMode: false,
+      };
+    }
   }
 
   // ★ 相談Q&Aはflightモードより優先（航空券後に天気・治安を聞くケース）
