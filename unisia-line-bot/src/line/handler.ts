@@ -18,6 +18,12 @@ import {
   getInsuranceWelcomeMessage,
   handleInsuranceMessage,
 } from '../handlers/insurance.js';
+import {
+  getConsultationWelcomeMessage,
+  handleConsultationMessage,
+  isConsultationTemplateInput,
+  isConsultationTemplateRequest,
+} from '../handlers/consultation.js';
 
 // 手動対応が必要かどうかを判定するキーワード
 const MANUAL_RESPONSE_INDICATORS = [
@@ -124,22 +130,7 @@ https://lin.ee/ZgWRQ6U
       return getInsuranceWelcomeMessage();
 
     case 'overseas_qa':
-      return `ご連絡ありがとうございます！
-
-何か質問等あればご遠慮なくチャットにてご連絡ください！
-しっかりサポートさせていただくため少しお時間がかかる場合がありますがご了承ください！
-
-━━━━━━━━━━━━━
-📌 AIサポートで即回答できます！
-━━━━━━━━━━━━━
-・各国の治安情報
-・気候・ベストシーズン
-・物価・費用
-・おすすめのお店・エリア
-・Wi-Fi・SIM情報
-・文化・マナー
-
-何でもお気軽にご質問ください！`;
+      return getConsultationWelcomeMessage();
 
     default:
       return '';
@@ -188,10 +179,13 @@ https://lin.ee/ZgWRQ6U
       return handleInsuranceMessage(userId, userMessage, modeData);
 
     case 'overseas_qa':
-    default:
-      // 海外質問: AI対応
+    default: {
       const history = getConversationHistory(userId, 10);
+      if (isConsultationTemplateRequest(userMessage) || isConsultationTemplateInput(userMessage)) {
+        return await handleConsultationMessage(userMessage, history);
+      }
       return await generateResponse(userMessage, history);
+    }
   }
 }
 
@@ -264,6 +258,47 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       currentMode = 'idle';
     }
     
+    // ★ 相談テンプレ再表示
+    if (isConsultationTemplateRequest(userMessage)) {
+      const response = getConsultationWelcomeMessage();
+      setUserState(userId, 'overseas_qa');
+      saveConversation({
+        lineUserId: userId,
+        userMessage,
+        botResponse: response,
+        timestamp: new Date().toISOString(),
+      });
+      if (lineClient) {
+        await lineClient.replyMessage({
+          replyToken: messageEvent.replyToken,
+          messages: [{ type: 'text', text: response }],
+        });
+      }
+      return;
+    }
+
+    // ★ 相談テンプレート／ショートカット入力
+    if (isConsultationTemplateInput(userMessage)) {
+      console.log(`🌏 Consultation template/keyword input detected`);
+      setUserState(userId, 'overseas_qa');
+      const history = getConversationHistory(userId, 10);
+      const response = await handleConsultationMessage(userMessage, history);
+      saveConversation({
+        lineUserId: userId,
+        userMessage,
+        botResponse: response,
+        timestamp: new Date().toISOString(),
+      });
+      if (lineClient) {
+        await lineClient.replyMessage({
+          replyToken: messageEvent.replyToken,
+          messages: [{ type: 'text', text: response }],
+        });
+        console.log(`📤 Consultation response: ${response.substring(0, 50)}...`);
+      }
+      return;
+    }
+
     // ★ 保険テンプレート入力を最優先で検出
     if (isInsuranceTemplateInput(userMessage)) {
       console.log(`🛡️ Insurance template input detected`);

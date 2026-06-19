@@ -18,6 +18,12 @@ import {
   parseCreditCards,
   generateCreditCardInsuranceRecommendation,
 } from './src/handlers/insurance.js';
+import {
+  getConsultationWelcomeMessage,
+  parseConsultationInput,
+  isConsultationTemplateInput,
+  isConsultationTemplateRequest,
+} from './src/handlers/consultation.js';
 
 // handler.tsから持ってきた自動切替テスト用関数
 const OVERSEAS_QUESTION_KEYWORDS = [
@@ -92,6 +98,56 @@ for (const t of templateInputs) {
   const status = result === t.expected ? '✅' : '❌';
   console.log(`${status} ${t.name}: ${result} (expected: ${t.expected})`);
 }
+
+// ========================================
+// 0b. 相談テンプレート入力検出テスト
+// ========================================
+console.log('\n📌 0b. 相談テンプレート入力検出テスト\n');
+
+const consultationInputs = [
+  {
+    name: 'ショートカット（天気）',
+    text: 'フィリピン 天気',
+    expectedCountry: 'フィリピン',
+    expectedTopic: 'weather',
+  },
+  {
+    name: 'ショートカット（治安）',
+    text: '韓国 治安',
+    expectedCountry: '韓国',
+    expectedTopic: 'safety',
+  },
+  {
+    name: 'テンプレート形式',
+    text: `相談国: 台湾
+知りたい内容: 物価`,
+    expectedCountry: '台湾',
+    expectedTopic: 'price',
+  },
+  {
+    name: '保険テンプレ（誤検出しない）',
+    text: `・渡航期間
+▶6ヶ月
+
+・予算（0円もOK）
+▶0円
+
+・到着国
+▶オーストラリア`,
+    expectedCountry: null,
+    expectedTopic: null,
+  },
+];
+
+for (const t of consultationInputs) {
+  const parsed = parseConsultationInput(t.text);
+  const ok = (parsed?.country === t.expectedCountry && parsed?.topic === t.expectedTopic)
+    || (t.expectedCountry === null && parsed === null);
+  console.log(`${ok ? '✅' : '❌'} ${t.name}: ${parsed ? `${parsed.country} / ${parsed.topic}` : 'null'}`);
+}
+
+console.log(`\n✅ テンプレ再表示: ${isConsultationTemplateRequest('テンプレート')}`);
+console.log(`✅ 初回メッセージ先頭: ${getConsultationWelcomeMessage().substring(0, 20)}...`);
 
 // ========================================
 // 1. キーワード検出テスト
