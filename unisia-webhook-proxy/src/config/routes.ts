@@ -62,6 +62,41 @@ export const ROUTE_RULES: RouteRule[] = [
   { type: 'prefix', pattern: '@メイン', target: 'ma', description: 'メインモード切替' },
   
   // ====================================
+  // リッチメニューからのテキストメッセージ対応
+  // （エルメでテキスト送信設定の場合）
+  // ====================================
+  
+  // 海外LINEサポート関連 → 相談ボット
+  { type: 'keyword', pattern: '海外LINEサポート', target: 'consultation', description: 'リッチメニュー:海外LINE' },
+  { type: 'keyword', pattern: '海外lineサポート', target: 'consultation', description: 'リッチメニュー:海外LINE' },
+  { type: 'keyword', pattern: 'LINEサポート', target: 'consultation', description: 'リッチメニュー:海外LINE' },
+  { type: 'keyword', pattern: 'lineサポート', target: 'consultation', description: 'リッチメニュー:海外LINE' },
+  
+  // 海外保険サポート関連 → 相談ボット
+  { type: 'keyword', pattern: '海外保険案内サポート', target: 'consultation', description: 'リッチメニュー:保険' },
+  { type: 'keyword', pattern: '海外保険サポート', target: 'consultation', description: 'リッチメニュー:保険' },
+  { type: 'keyword', pattern: '保険案内サポート', target: 'consultation', description: 'リッチメニュー:保険' },
+  
+  // 帰国後転職サポート関連 → 相談ボット
+  { type: 'keyword', pattern: '帰国後転職サポート', target: 'consultation', description: 'リッチメニュー:転職' },
+  { type: 'keyword', pattern: '転職サポート', target: 'consultation', description: 'リッチメニュー:転職' },
+  
+  // 海外留学関連 → 相談ボット
+  { type: 'keyword', pattern: '海外留学無料相談会', target: 'consultation', description: 'リッチメニュー:留学' },
+  { type: 'keyword', pattern: '海外留学無料 相談会', target: 'consultation', description: 'リッチメニュー:留学' },
+  { type: 'keyword', pattern: '留学無料相談', target: 'consultation', description: 'リッチメニュー:留学' },
+  { type: 'keyword', pattern: '留学相談会', target: 'consultation', description: 'リッチメニュー:留学' },
+  
+  // 海外緊急対応 → 相談ボット
+  { type: 'keyword', pattern: '海外緊急対応', target: 'consultation', description: 'リッチメニュー:緊急' },
+  { type: 'keyword', pattern: '緊急対応', target: 'consultation', description: 'リッチメニュー:緊急' },
+  
+  // 格安航空券サポート関連 → 航空券ボット
+  { type: 'keyword', pattern: '格安航空券サポート', target: 'flight', description: 'リッチメニュー:航空券' },
+  { type: 'keyword', pattern: '格安購入券サポート', target: 'flight', description: 'リッチメニュー:航空券' },
+  { type: 'keyword', pattern: '航空券サポート', target: 'flight', description: 'リッチメニュー:航空券' },
+  
+  // ====================================
   // キーワードによるルーティング
   // ====================================
   
