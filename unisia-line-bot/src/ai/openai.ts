@@ -1185,6 +1185,26 @@ export function isOverseasQuestion(message: string): boolean {
 }
 
 /**
+ * メッセージに国名らしき単語が含まれているか検出（登録外も含む）
+ */
+function hasCountryMention(message: string): boolean {
+  // 一般的な国名パターン（登録外も含む）
+  const countryPatterns = [
+    /フランス/, /イタリア/, /スペイン/, /ドイツ/, /イギリス/,
+    /中国/, /インド/, /ブラジル/, /メキシコ/, /カナダ/,
+    /インドネシア/, /マレーシア/, /カンボジア/, /ミャンマー/, /ラオス/,
+    /ニュージーランド/, /フィジー/, /モルディブ/, /ドバイ/, /エジプト/,
+    /トルコ/, /ギリシャ/, /ポルトガル/, /オランダ/, /ベルギー/,
+    /スイス/, /オーストリア/, /チェコ/, /ポーランド/, /ハンガリー/,
+    /ロシア/, /北欧/, /スウェーデン/, /ノルウェー/, /フィンランド/, /デンマーク/,
+    /クロアチア/, /モロッコ/, /南アフリカ/, /ケニア/, /タンザニア/,
+    /アルゼンチン/, /ペルー/, /チリ/, /コロンビア/, /キューバ/,
+  ];
+  
+  return countryPatterns.some(pattern => pattern.test(message));
+}
+
+/**
  * 会話の文脈を考慮してFAQから回答を検索
  */
 function searchFAQWithContext(message: string, history: ConversationEntry[]): string | null {
@@ -1193,7 +1213,13 @@ function searchFAQWithContext(message: string, history: ConversationEntry[]): st
   // まず現在のメッセージから国名を検出
   let country = detectCountry(message);
   
-  // 国名がない場合、会話履歴から検出
+  // 登録外の国名が含まれている場合は、OpenAIに回答を委任するためnullを返す
+  if (!country && hasCountryMention(message)) {
+    console.log(`🌍 Unregistered country detected in: "${message.substring(0, 30)}..." - delegating to OpenAI`);
+    return null;
+  }
+  
+  // 国名がない場合のみ、会話履歴から検出（国名が明示されている場合は履歴を使わない）
   if (!country) {
     country = detectCountryFromHistory(history);
   }
