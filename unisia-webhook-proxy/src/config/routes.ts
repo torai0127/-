@@ -93,6 +93,57 @@ export const ROUTE_RULES: RouteRule[] = [
   { type: 'keyword', pattern: '緊急', target: 'consultation', description: '緊急対応' },
   { type: 'keyword', pattern: 'トラブル', target: 'consultation', description: 'トラブル対応' },
   { type: 'keyword', pattern: '助けて', target: 'consultation', description: '緊急対応' },
+  
+  // ====================================
+  // 海外Q&A関連キーワード → 相談ボット
+  // ====================================
+  
+  // 天気・気候
+  { type: 'keyword', pattern: '天気', target: 'consultation', description: '天気情報' },
+  { type: 'keyword', pattern: '気温', target: 'consultation', description: '気温情報' },
+  { type: 'keyword', pattern: '気候', target: 'consultation', description: '気候情報' },
+  { type: 'keyword', pattern: '季節', target: 'consultation', description: '季節情報' },
+  
+  // 物価・費用
+  { type: 'keyword', pattern: '物価', target: 'consultation', description: '物価情報' },
+  { type: 'keyword', pattern: '費用', target: 'consultation', description: '費用情報' },
+  { type: 'keyword', pattern: '相場', target: 'consultation', description: '相場情報' },
+  
+  // 観光・グルメ
+  { type: 'keyword', pattern: 'おすすめ', target: 'consultation', description: 'おすすめ情報' },
+  { type: 'keyword', pattern: 'オススメ', target: 'consultation', description: 'おすすめ情報' },
+  { type: 'keyword', pattern: '観光', target: 'consultation', description: '観光情報' },
+  { type: 'keyword', pattern: 'スポット', target: 'consultation', description: '観光スポット' },
+  { type: 'keyword', pattern: 'グルメ', target: 'consultation', description: 'グルメ情報' },
+  { type: 'keyword', pattern: '料理', target: 'consultation', description: '料理情報' },
+  { type: 'keyword', pattern: '食べ物', target: 'consultation', description: '食べ物情報' },
+  { type: 'keyword', pattern: 'レストラン', target: 'consultation', description: 'レストラン情報' },
+  
+  // 通信・準備
+  { type: 'keyword', pattern: 'Wi-Fi', target: 'consultation', description: 'Wi-Fi情報' },
+  { type: 'keyword', pattern: 'wifi', target: 'consultation', description: 'Wi-Fi情報' },
+  { type: 'keyword', pattern: 'SIM', target: 'consultation', description: 'SIM情報' },
+  { type: 'keyword', pattern: 'ビザ', target: 'consultation', description: 'ビザ情報' },
+  { type: 'keyword', pattern: '入国', target: 'consultation', description: '入国情報' },
+  { type: 'keyword', pattern: 'パスポート', target: 'consultation', description: 'パスポート情報' },
+  { type: 'keyword', pattern: '持ち物', target: 'consultation', description: '持ち物情報' },
+  { type: 'keyword', pattern: '服装', target: 'consultation', description: '服装情報' },
+  
+  // 文化・マナー
+  { type: 'keyword', pattern: '文化', target: 'consultation', description: '文化情報' },
+  { type: 'keyword', pattern: 'マナー', target: 'consultation', description: 'マナー情報' },
+  
+  // 国名（対応国）
+  { type: 'keyword', pattern: 'フィリピン', target: 'consultation', description: 'フィリピン情報' },
+  { type: 'keyword', pattern: '韓国', target: 'consultation', description: '韓国情報' },
+  { type: 'keyword', pattern: 'タイ', target: 'consultation', description: 'タイ情報' },
+  { type: 'keyword', pattern: '台湾', target: 'consultation', description: '台湾情報' },
+  { type: 'keyword', pattern: 'ハワイ', target: 'consultation', description: 'ハワイ情報' },
+  { type: 'keyword', pattern: 'グアム', target: 'consultation', description: 'グアム情報' },
+  { type: 'keyword', pattern: 'オーストラリア', target: 'consultation', description: 'オーストラリア情報' },
+  { type: 'keyword', pattern: 'ベトナム', target: 'consultation', description: 'ベトナム情報' },
+  { type: 'keyword', pattern: 'シンガポール', target: 'consultation', description: 'シンガポール情報' },
+  { type: 'keyword', pattern: 'アメリカ', target: 'consultation', description: 'アメリカ情報' },
 ];
 
 /**
