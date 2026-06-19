@@ -1,5 +1,5 @@
-import { generateResponse } from '../ai/openai.js';
-import { getSafetyInfo, formatSafetyInfo, normalizeCountryName } from '../external/mofa-safety.js';
+import { generateResponse, getWeatherForCountry, getWeatherCityName } from '../ai/openai.js';
+import { getSafetyInfo, formatSafetyInfo, normalizeCountryName, getCountryCode } from '../external/mofa-safety.js';
 
 export type ConsultationTopic =
   | 'weather'
@@ -130,37 +130,51 @@ function detectCountry(text: string): string | null {
 }
 
 function parseTemplateFields(message: string): ParsedConsultation | null {
-  const countryPatterns = [
-    /相談国[\s:：]*\n▶[^\n]*\n▶\s*([^\n]+)/,
-    /相談国[\s:：]*\n▶\s*([^\n]+)/,
-    /相談国[:：]\s*([^\n]+)/,
-  ];
-  const topicPatterns = [
-    /知りたい内容[\s:：]*\n▶[^\n]*\n▶\s*([^\n]+)/,
-    /知りたい内容[\s:：]*\n▶\s*([^\n]+)/,
-    /知りたい内容[:：]\s*([^\n]+)/,
-  ];
-
   let countryRaw: string | null = null;
   let topicRaw: string | null = null;
 
-  for (const pattern of countryPatterns) {
-    const match = message.match(pattern);
-    if (match?.[1]?.trim()) {
-      countryRaw = match[1].trim();
-      break;
-    }
+  // 相談国: フィリピン / 知りたい内容: 天気（1行形式）
+  const inlineCountry = message.match(/相談国[:：]\s*([^\n]+)/);
+  const inlineTopic = message.match(/知りたい内容[:：]\s*([^\n]+)/);
+  if (inlineCountry?.[1]?.trim() && !inlineCountry[1].includes('知りたい')) {
+    countryRaw = inlineCountry[1].trim();
+  }
+  if (inlineTopic?.[1]?.trim()) {
+    topicRaw = inlineTopic[1].trim();
   }
 
-  for (const pattern of topicPatterns) {
-    const match = message.match(pattern);
-    if (match?.[1]?.trim()) {
-      topicRaw = match[1].trim();
-      break;
+  // ブロック内の最後の値を採用（Elmeテンプレ＋記入欄）
+  if (!countryRaw || !topicRaw) {
+    const lines = message.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line.startsWith('相談国')) {
+        const sameLine = line.match(/相談国[:：]\s*(.+)/);
+        if (sameLine?.[1]?.trim()) countryRaw = sameLine[1].trim();
+        for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+          const v = lines[j].trim();
+          if (v && !v.startsWith('知りたい') && !v.startsWith('━') && !v.startsWith('【')) {
+            if (!v.includes('例') && v.length < 30) countryRaw = v.replace(/^▶[︎]?\s*/, '');
+            break;
+          }
+        }
+      }
+      if (line.startsWith('知りたい内容')) {
+        const sameLine = line.match(/知りたい内容[:：]\s*(.+)/);
+        if (sameLine?.[1]?.trim()) topicRaw = sameLine[1].trim();
+        for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+          const v = lines[j].trim();
+          if (v && !v.startsWith('━') && !v.startsWith('【')) {
+            if (!v.includes('例') && v.length < 30) topicRaw = v.replace(/^▶[︎]?\s*/, '');
+            break;
+          }
+        }
+      }
     }
   }
 
   if (!countryRaw || !topicRaw) return null;
+  if (countryRaw.includes('知りたい内容')) return null;
 
   const country = detectCountry(countryRaw) || countryRaw.trim();
   const topicInfo = detectTopic(topicRaw);
@@ -195,6 +209,111 @@ function parseShortKeyword(message: string): ParsedConsultation | null {
  */
 export function parseConsultationInput(message: string): ParsedConsultation | null {
   return parseTemplateFields(message) || parseShortKeyword(message);
+}
+
+/**
+ * Elmeが空テンプレを自動送信しただけか（記入済みは処理する）
+ */
+export function isElmeConsultationTemplateEcho(message: string): boolean {
+  if (!message.includes('海外LINEサポート')) return false;
+  if (!message.includes('相談国') || !message.includes('知りたい内容')) return false;
+  if (parseConsultationInput(message)) return false;
+  if (/相談国[:：]\s*\S/.test(message) && /知りたい内容[:：]\s*\S/.test(message)) {
+    return false;
+  }
+  return true;
+}
+
+function buildConsultationHeader(parsed: ParsedConsultation): string {
+  return `📍 ${parsed.country} × ${parsed.topicLabel}\n\n`;
+}
+
+function buildResourceLinks(parsed: ParsedConsultation): string {
+  const country = parsed.country;
+  const code = getCountryCode(country);
+  const mofaBase = 'https://www.anzen.mofa.go.jp/';
+  const mofaCountry = code
+    ? `https://www.anzen.mofa.go.jp/info/pcinfolist.html?cid=${code}`
+    : mofaBase;
+  const city = getWeatherCityName(country) || country;
+  const wttrUrl = `https://wttr.in/${encodeURIComponent(city)}`;
+
+  switch (parsed.topic) {
+    case 'weather':
+      return `🔗 リアルタイム天気リンク\n・wttr.in（${city}）\n${wttrUrl}\n・tenki.jp\nhttps://tenki.jp/\n・Weather.com\nhttps://weather.com/`;
+    case 'safety':
+      return `🔗 治安・安全情報\n・外務省 海外安全ホームページ\n${mofaCountry}\n・たびレジ（渡航届）\nhttps://www.tabisapro.jp/\n・外務省 危機管理情報\n${mofaBase}`;
+    case 'politics':
+      return `🔗 情勢・最新ニュース\n・外務省 海外安全\n${mofaCountry}\n・NHK WORLD JAPAN\nhttps://www3.nhk.or.jp/nhkworld/\n・BBC World News\nhttps://www.bbc.com/news/world`;
+    case 'price':
+      return `🔗 物価・生活費参考\n・Numbeo（物価比較）\nhttps://www.numbeo.com/cost-of-living/\n・外務省 各国・地域情報\n${mofaBase}\n・XE.com（為替）\nhttps://www.xe.com/`;
+    case 'wifi':
+      return `🔗 通信・Wi-Fi\n・Visit Japan Web（入国手続）\nhttps://vjw-lp.digital.go.jp/\n・Airalo（eSIM）\nhttps://www.airalo.com/\n・楽天モバイル 海外ロaming\nhttps://network.mobile.rakuten.co.jp/hawaii/`;
+    case 'culture':
+      return `🔗 文化・マナー\n・外務省 各国・地域情報\n${mofaBase}\n・JETRO 国・地域別情報\nhttps://www.jetro.go.jp/world/\n・大使館・領事館一覧\n${mofaBase}`;
+    case 'food':
+      return `🔗 グルメ・レストラン\n・TripAdvisor\nhttps://www.tripadvisor.jp/\n・Google Maps\nhttps://www.google.com/maps\n・食べログ（海外店舗も一部）\nhttps://tabelog.com/`;
+    case 'tips':
+      return `🔗 観光・おすすめ\n・TripAdvisor\nhttps://www.tripadvisor.jp/\n・Visit ${country}（国観光局サイトを検索）\n・外務省 旅行・滞在の注意\n${mofaCountry}`;
+    default:
+      return `🔗 参考リンク\n${mofaBase}`;
+  }
+}
+
+function getPartialInputMessage(message: string): string | null {
+  const countryMatch = message.match(/相談国[:：]\s*([^\n]+)/);
+  const topicMatch = message.match(/知りたい内容[:：]\s*([^\n]+)/);
+  const hasCountry = countryMatch?.[1]?.trim() && !countryMatch[1].includes('知りたい');
+  const hasTopic = topicMatch?.[1]?.trim();
+
+  const missing: string[] = [];
+  if (!hasCountry) missing.push('相談国');
+  if (!hasTopic) missing.push('知りたい内容');
+
+  if (missing.length === 0 || missing.length === 2) return null;
+
+  return `📝 あと${missing.length}項目のご記入が必要です
+
+未入力: ${missing.join('、')}
+
+例：
+相談国: フィリピン
+知りたい内容: 天気
+
+💡 「フィリピン 天気」のショートカット入力もOKです！`;
+}
+
+async function buildTopicResponse(
+  parsed: ParsedConsultation,
+  history: ConversationEntry[],
+): Promise<string> {
+  const query = buildQuery(parsed);
+
+  switch (parsed.topic) {
+    case 'weather': {
+      const weather = await getWeatherForCountry(parsed.country);
+      if (weather) return weather;
+      return await generateResponse(query, history);
+    }
+    case 'safety': {
+      const safety = await getSafetyInfo(parsed.country);
+      const faq = await generateResponse(query, history);
+      if (safety) {
+        return `${formatSafetyInfo(safety, false)}\n\n━━━━━━━━━━━━━━━\n\n${faq}`;
+      }
+      return faq;
+    }
+    case 'politics': {
+      const safety = await getSafetyInfo(parsed.country);
+      const faq = await generateResponse(`${parsed.country}の情勢は？`, history);
+      if (safety) {
+        return `${formatSafetyInfo(safety, true)}\n\n━━━━━━━━━━━━━━━\n\n${faq}`;
+      }
+      return faq;
+    }
+    default:
+      return generateResponse(query, history);
+  }
 }
 
 function buildQuery(parsed: ParsedConsultation): string {
@@ -232,19 +351,21 @@ export async function handleConsultationMessage(
 
   const parsed = parseConsultationInput(userMessage);
   if (!parsed) {
+    const partial = getPartialInputMessage(userMessage);
+    if (partial) return partial;
     return getConsultationWelcomeMessage();
   }
 
-  const query = buildQuery(parsed);
-  const faqResponse = await generateResponse(query, history);
+  const header = buildConsultationHeader(parsed);
+  const body = await buildTopicResponse(parsed, history);
+  const links = buildResourceLinks(parsed);
 
-  if (parsed.topic === 'safety' || parsed.topic === 'politics') {
-    const safetyInfo = await getSafetyInfo(parsed.country);
-    if (safetyInfo) {
-      const mofaBlock = formatSafetyInfo(safetyInfo, parsed.topic === 'politics');
-      return `${mofaBlock}\n\n━━━━━━━━━━━━━━━\n\n${faqResponse}`;
-    }
-  }
+  return `${header}${body}
 
-  return faqResponse;
+━━━━━━━━━━━━━━━
+
+${links}
+
+💡 他の内容も「${parsed.country} 物価」のように聞けます
+「テンプレート」で入力フォーム再表示`;
 }

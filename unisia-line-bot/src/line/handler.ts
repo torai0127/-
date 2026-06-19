@@ -29,6 +29,7 @@ import {
   handleConsultationMessage,
   isConsultationTemplateInput,
   isConsultationTemplateRequest,
+  isElmeConsultationTemplateEcho,
 } from '../handlers/consultation.js';
 
 // 手動対応が必要かどうかを判定するキーワード
@@ -290,7 +291,7 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
   console.log(`📩 Consultation Bot received from ${userId}: ${userMessage}`);
 
   // エルメ自動配信の挨拶文は再返信しない（postback直後の重複防止）
-  if (isElmeAutomatedWelcome(userMessage)) {
+  if (isElmeAutomatedWelcome(userMessage) || isElmeConsultationTemplateEcho(userMessage)) {
     console.log(`⏭️ Skipping Elme automated welcome echo`);
     setUserState(userId, 'overseas_qa');
     return;

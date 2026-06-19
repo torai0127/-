@@ -150,6 +150,18 @@ for (const t of consultationInputs) {
 console.log(`\n✅ テンプレ再表示: ${isConsultationTemplateRequest('テンプレート')}`);
 console.log(`✅ 初回メッセージ先頭: ${getConsultationWelcomeMessage().substring(0, 20)}...`);
 
+// 相談BOT: テンプレ入力→回答テスト
+console.log('\n📌 0c. 海外LINEサポート回答テスト\n');
+const consultationCases = [
+  { input: 'フィリピン 天気', topic: '天気' },
+  { input: '相談国: 韓国\n知りたい内容: 治安', topic: '治安' },
+  { input: '台湾 物価', topic: '物価' },
+];
+for (const c of consultationCases) {
+  const p = parseConsultationInput(c.input);
+  console.log(`${p ? '✅' : '❌'} "${c.input.replace(/\n/g, ' ')}" → ${p ? `${p.country}/${p.topicLabel}` : 'null'}`);
+}
+
 // ========================================
 // 1. キーワード検出テスト
 // ========================================

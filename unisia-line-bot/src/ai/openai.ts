@@ -124,6 +124,20 @@ ${forecast}
   }
 }
 
+/** 相談BOT向け：国名から天気情報を取得 */
+export async function getWeatherForCountry(country: string): Promise<string | null> {
+  return fetchWeatherInfo(country);
+}
+
+/** 天気API用の代表都市名 */
+export function getWeatherCityName(country: string): string | null {
+  if (COUNTRY_TO_CITY[country]) return COUNTRY_TO_CITY[country];
+  for (const [name, city] of Object.entries(COUNTRY_TO_CITY)) {
+    if (country.includes(name) || name.includes(country)) return city;
+  }
+  return null;
+}
+
 /**
  * メッセージから天気質問かどうか判定し、国名を抽出
  */
