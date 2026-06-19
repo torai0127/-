@@ -1,5 +1,6 @@
 import { generateResponse, getWeatherForCountry, getWeatherCityName } from '../ai/openai.js';
 import { getSafetyInfo, formatSafetyInfo, normalizeCountryName, getCountryCode } from '../external/mofa-safety.js';
+import { isInsuranceLikeMessage } from '../db/conversation-state.js';
 
 export type ConsultationTopic =
   | 'weather'
@@ -106,6 +107,7 @@ export function isConsultationTemplateRequest(message: string): boolean {
  * テンプレート入力またはショートカット形式か
  */
 export function isConsultationTemplateInput(message: string): boolean {
+  if (isInsuranceLikeMessage(message)) return false;
   return parseConsultationInput(message) !== null;
 }
 
@@ -189,6 +191,7 @@ function parseTemplateFields(message: string): ParsedConsultation | null {
 
 function parseShortKeyword(message: string): ParsedConsultation | null {
   const trimmed = message.trim();
+  if (isInsuranceLikeMessage(trimmed)) return null;
   if (trimmed.includes('相談国') || trimmed.includes('知りたい内容')) {
     return null;
   }
@@ -208,6 +211,7 @@ function parseShortKeyword(message: string): ParsedConsultation | null {
  * 相談入力を解析
  */
 export function parseConsultationInput(message: string): ParsedConsultation | null {
+  if (isInsuranceLikeMessage(message)) return null;
   return parseTemplateFields(message) || parseShortKeyword(message);
 }
 

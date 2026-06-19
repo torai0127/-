@@ -64,9 +64,9 @@ console.log('📌 0. 保険テンプレート入力検出テスト\n');
 
 const templateInputs = [
   {
-    name: 'ユーザーのテンプレート入力（実際の形式）',
+    name: '保険テンプレ（相談BOTに誤判定しない）',
     text: `・渡航期間
-▶6ヶ月
+▶3ヶ月
 
 ・予算（0円もOK）
 ▶0円
@@ -126,9 +126,9 @@ const consultationInputs = [
     expectedTopic: 'price',
   },
   {
-    name: '保険テンプレ（誤検出しない）',
+    name: '保険テンプレ（相談BOTに誤判定しない）',
     text: `・渡航期間
-▶6ヶ月
+▶3ヶ月
 
 ・予算（0円もOK）
 ▶0円

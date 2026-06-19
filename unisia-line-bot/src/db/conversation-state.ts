@@ -213,9 +213,22 @@ export function detectModeFromKeyword(message: string): ConversationMode | null 
 }
 
 /**
+ * 保険テンプレート形式のメッセージか（相談BOTとの誤判定防止）
+ */
+export function isInsuranceLikeMessage(message: string): boolean {
+  return (
+    message.includes('渡航期間') &&
+    message.includes('予算') &&
+    (message.includes('到着国') || message.includes('到着'))
+  );
+}
+
+/**
  * 保険テンプレート入力かどうかを判定
  */
 export function isInsuranceTemplateInput(message: string): boolean {
+  if (!isInsuranceLikeMessage(message)) return false;
+
   // ユーザーが記入したテンプレート入力を検出
   // 「▶」の後に実際の値が入っている場合
   const hasFilledPeriod = /渡航期間[\s\S]*?▶[^\n]*\S+/.test(message) || /▶[^\n]*(?:週間|ヶ月|か月|年|日)/.test(message);

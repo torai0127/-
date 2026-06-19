@@ -11,6 +11,7 @@ import {
   isConversationTimedOut,
   detectModeFromKeyword,
   isInsuranceTemplateInput,
+  isInsuranceLikeMessage,
   isMenuTriggerMessage,
   isElmeAutomatedWelcome,
   isElmeAutomatedInsuranceWelcome,
@@ -363,9 +364,34 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       return;
     }
 
-    // ★ 相談テンプレート／ショートカット入力（航空券メニュー文言は除外）
+    // ★ 保険テンプレート入力（相談BOTより先に判定）
+    if (isInsuranceTemplateInput(userMessage)) {
+      console.log(`🛡️ Insurance template input detected`);
+      
+      setUserState(userId, 'insurance', { step: 'waiting_template' });
+      const response = handleInsuranceMessage(userId, userMessage, { step: 'waiting_template' });
+      
+      saveConversation({
+        lineUserId: userId,
+        userMessage,
+        botResponse: response,
+        timestamp: new Date().toISOString(),
+      });
+      
+      if (lineClient) {
+        await lineClient.replyMessage({
+          replyToken: messageEvent.replyToken,
+          messages: [{ type: 'text', text: response }],
+        });
+        console.log(`📤 Insurance template response: ${response.substring(0, 50)}...`);
+      }
+      return;
+    }
+
+    // ★ 相談テンプレート／ショートカット入力（航空券・保険テンプレは除外）
     if (
       isConsultationTemplateInput(userMessage) &&
+      !isInsuranceLikeMessage(userMessage) &&
       !userMessage.includes('航空券') &&
       !userMessage.includes('格安購入券') &&
       !userMessage.includes('いきたい地域')
@@ -386,33 +412,6 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
           messages: [{ type: 'text', text: response }],
         });
         console.log(`📤 Consultation response: ${response.substring(0, 50)}...`);
-      }
-      return;
-    }
-
-    // ★ 保険テンプレート入力を最優先で検出
-    if (isInsuranceTemplateInput(userMessage)) {
-      console.log(`🛡️ Insurance template input detected`);
-      
-      // 保険モードに設定
-      setUserState(userId, 'insurance', { step: 'waiting_template' });
-      
-      // テンプレートを処理
-      const response = handleInsuranceMessage(userId, userMessage, { step: 'waiting_template' });
-      
-      saveConversation({
-        lineUserId: userId,
-        userMessage,
-        botResponse: response,
-        timestamp: new Date().toISOString(),
-      });
-      
-      if (lineClient) {
-        await lineClient.replyMessage({
-          replyToken: messageEvent.replyToken,
-          messages: [{ type: 'text', text: response }],
-        });
-        console.log(`📤 Insurance template response: ${response.substring(0, 50)}...`);
       }
       return;
     }
