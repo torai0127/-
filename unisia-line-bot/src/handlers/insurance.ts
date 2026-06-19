@@ -22,56 +22,86 @@ const CREDIT_CARD_INSURANCE: Record<string, {
   coverageDays: number;
   medicalCoverage: string;
   conditions: string;
+  attachmentType: 'auto' | 'travel_payment' | 'tier';
+  tips?: string;
 }> = {
-  '楽天カード': {
-    name: '楽天カード',
-    coverageDays: 90,
-    medicalCoverage: '最大200万円',
-    conditions: '旅行代金をカードで支払うこと',
-  },
   'エポスカード': {
     name: 'エポスカード',
     coverageDays: 90,
-    medicalCoverage: '最大270万円',
-    conditions: '自動付帯（支払い条件なし）',
+    medicalCoverage: '最大2,700万円',
+    attachmentType: 'auto',
+    conditions: 'カード保有だけで自動付帯（旅行代金の決済不要）',
+    tips: '条件なしで使いやすい。予算0円の方に特におすすめ',
+  },
+  '楽天カード': {
+    name: '楽天カード',
+    coverageDays: 90,
+    medicalCoverage: '最大2,000万円',
+    attachmentType: 'travel_payment',
+    conditions: '旅行代金（航空券・ツアー等）をカードで事前決済',
+    tips: '航空券を楽天カードで購入すると付帯開始',
   },
   '三井住友カード': {
     name: '三井住友カード',
     coverageDays: 90,
-    medicalCoverage: '最大100万円',
-    conditions: '旅行代金をカードで支払うこと',
+    medicalCoverage: '最大1,000万円',
+    attachmentType: 'travel_payment',
+    conditions: '旅行代金（航空券・ツアー等）をカードで事前決済',
+    tips: 'Visa/Mastercard系。ゴールド以上は補償額アップ',
   },
   'JCBカード': {
     name: 'JCBカード',
     coverageDays: 90,
-    medicalCoverage: '最大100万円',
-    conditions: '旅行代金をカードで支払うこと',
+    medicalCoverage: '最大1,000万円',
+    attachmentType: 'travel_payment',
+    conditions: '旅行代金（航空券・ツアー等）をカードで事前決済',
+    tips: 'JCBプラザ会員向けの案内も要確認',
   },
   'セゾンカード': {
     name: 'セゾンカード',
     coverageDays: 90,
-    medicalCoverage: '最大300万円（ゴールド）',
-    conditions: 'カード種別による',
+    medicalCoverage: '最大3,000万円（ゴールド）',
+    attachmentType: 'tier',
+    conditions: 'カード種別による（ゴールド以上で手厚い補償）',
+    tips: '一般カードとゴールドで補償内容が異なります',
   },
   'アメックス': {
     name: 'アメリカン・エキスプレス',
     coverageDays: 90,
-    medicalCoverage: '最大300万円',
-    conditions: '旅行代金をカードで支払うこと',
+    medicalCoverage: '最大3,000万円',
+    attachmentType: 'travel_payment',
+    conditions: '旅行代金をカードで事前決済（カード種別で条件異なる）',
+    tips: 'プラチナ等は補償が手厚い。要約を必ず確認',
   },
   'dカード': {
     name: 'dカード',
     coverageDays: 90,
-    medicalCoverage: '最大200万円（ゴールド）',
-    conditions: 'ゴールド以上が条件',
+    medicalCoverage: '最大2,000万円（ゴールド）',
+    attachmentType: 'tier',
+    conditions: 'ゴールド以上で付帯（一般カードは要確認）',
+    tips: 'dカード GOLD/dカード PLATINUM で付帯',
   },
   'イオンカード': {
     name: 'イオンカード',
     coverageDays: 90,
     medicalCoverage: '最大50万円',
-    conditions: '旅行代金をカードで支払うこと',
+    attachmentType: 'travel_payment',
+    conditions: '旅行代金（航空券・ツアー等）をカードで事前決済',
+    tips: '補償額は控えめ。長期滞在は追加保険も検討',
   },
 };
+
+/** 表示優先順（エポス・楽天・三井住友を先頭） */
+const CREDIT_CARD_DISPLAY_ORDER = [
+  'エポスカード',
+  '楽天カード',
+  '三井住友カード',
+  'JCBカード',
+  'セゾンカード',
+  'アメックス',
+  'dカード',
+  'イオンカード',
+];
 
 // おすすめ海外保険（公式申込URL付き）
 interface RecommendedInsurance {
@@ -519,9 +549,38 @@ function saveInsuranceConsultation(lineUserId: string, data: InsuranceData): voi
 }
 
 /**
- * 予算0円の場合のクレカ確認メッセージ
+ * クレカ付帯保険一覧（付帯条件付き）
  */
-export function getAskCreditCardsMessage(data: InsuranceData): string {
+export function formatCreditCardInsuranceCatalog(): string {
+  let block = `💳 クレジットカード付帯の海外旅行保険\n\n`;
+
+  for (const cardKey of CREDIT_CARD_DISPLAY_ORDER) {
+    const info = CREDIT_CARD_INSURANCE[cardKey];
+    if (!info) continue;
+
+    const badge = info.attachmentType === 'auto' ? ' ⭐自動付帯' : '';
+    block += `【${info.name}】${badge}\n`;
+    block += `・補償期間: 最大${info.coverageDays}日\n`;
+    block += `・治療費用: ${info.medicalCoverage}\n`;
+    block += `・付帯条件: ${info.conditions}\n`;
+    if (info.tips) {
+      block += `・ポイント: ${info.tips}\n`;
+    }
+    block += `\n`;
+  }
+
+  block += `📌 長期滞在の活用ヒント\n`;
+  block += `・91日目以降は別カードで現地決済 → 新たに90日間の補償開始\n`;
+  block += `・3枚持ちなら最大約270日（約9ヶ月）カバー可能\n\n`;
+  block += `⚠️ 補償内容はカード種別・改定で変わります。最新の約款をご確認ください\n\n`;
+
+  return block;
+}
+
+/**
+ * 予算0円：クレカ付帯保険の案内
+ */
+export function getZeroBudgetCreditCardGuide(data: InsuranceData): string {
   return `📋 ご記入ありがとうございます！
 
 【ご入力内容】
@@ -529,22 +588,21 @@ export function getAskCreditCardsMessage(data: InsuranceData): string {
 ・予算: ${data.budget}
 ・到着国: ${data.destination}
 
-予算0円とのことで、クレジットカードの付帯保険を活用する方法をご提案します！
+予算0円とのことで、クレジットカード付帯の海外旅行保険をご活用ください！
 
-💳 お持ちのクレジットカードを教えてください
+${formatCreditCardInsuranceCatalog()}${buildCountryAdviceSection(data)}💡 お持ちのカード名を送っていただければ、あなた向けの活用法を詳しくご案内します！
 
 例：
-・楽天カード
 ・エポスカード
+・楽天カード
 ・三井住友カード
-・JCBカード
-・セゾンカード
-・アメックス
-・dカード
-・イオンカード
 
-※複数お持ちの場合は全てお教えください
-※3枚あれば最大9ヶ月分の保険をカバーできます！`;
+※複数枚お持ちの場合は全てお教えください`;
+}
+
+/** @deprecated getZeroBudgetCreditCardGuide を使用 */
+export function getAskCreditCardsMessage(data: InsuranceData): string {
+  return getZeroBudgetCreditCardGuide(data);
 }
 
 /**
@@ -588,19 +646,24 @@ export function generateCreditCardInsuranceRecommendation(
   
   response += `💳 お持ちのカードの保険内容\n\n`;
   
-  let totalCoverage = 0;
+  let totalCoverageDays = 0;
   let autoAttachCard = '';
   
   for (const card of cards) {
     const info = CREDIT_CARD_INSURANCE[card];
     if (info) {
-      response += `【${info.name}】\n`;
-      response += `・補償期間: ${info.coverageDays}日\n`;
+      const badge = info.attachmentType === 'auto' ? ' ⭐自動付帯' : '';
+      response += `【${info.name}】${badge}\n`;
+      response += `・補償期間: 最大${info.coverageDays}日\n`;
       response += `・治療費用: ${info.medicalCoverage}\n`;
-      response += `・条件: ${info.conditions}\n\n`;
-      totalCoverage += info.coverageDays;
+      response += `・付帯条件: ${info.conditions}\n`;
+      if (info.tips) {
+        response += `・ポイント: ${info.tips}\n`;
+      }
+      response += `\n`;
+      totalCoverageDays += info.coverageDays;
       
-      if (info.conditions.includes('自動付帯')) {
+      if (info.attachmentType === 'auto') {
         autoAttachCard = info.name;
       }
     }
@@ -633,12 +696,8 @@ export function generateCreditCardInsuranceRecommendation(
   
   // 渡航期間が長い場合の注意
   const daysNeeded = parseTravelPeriodDays(data.travelPeriod) || 0;
-  const totalCoverage = cards.reduce((sum, card) => {
-    const info = CREDIT_CARD_INSURANCE[card];
-    return sum + (info?.coverageDays || 0);
-  }, 0);
 
-  if (daysNeeded > totalCoverage) {
+  if (daysNeeded > totalCoverageDays) {
     response += `⚠️ 渡航期間(${data.travelPeriod})に対し、クレカ付帯だけでは日数が不足する可能性があります。\n`;
     response += `追加で海外旅行保険のご検討をおすすめします。\n\n`;
     response += buildCountryAdviceSection(data);
@@ -711,7 +770,7 @@ export function handleInsuranceMessage(
 
       if (parsed.step === 'asking_cards') {
         setUserState(lineUserId, 'insurance', parsed);
-        return getAskCreditCardsMessage(parsed);
+        return getZeroBudgetCreditCardGuide(parsed);
       }
 
       setUserState(lineUserId, 'insurance', { ...parsed, step: 'completed' });
@@ -746,7 +805,7 @@ export function handleInsuranceMessage(
     }
     
     // カードが検出できない場合
-    return `💳 クレジットカード名が確認できませんでした。\n\nお持ちのカードを教えてください：\n・楽天カード\n・エポスカード\n・三井住友カード\n・JCBカード\n・セゾンカード\n・アメックス\n・dカード\n・イオンカード\n\n※該当するカード名をそのままお送りください`;
+    return `💳 カード名が確認できませんでした。\n\n下記から該当するものをそのままお送りください：\n・エポスカード\n・楽天カード\n・三井住友カード\n・JCBカード\n・セゾンカード\n・アメックス\n・dカード\n・イオンカード\n\n※複数枚ある場合はまとめてOKです`;
   }
   
   // 完了後の追加質問
