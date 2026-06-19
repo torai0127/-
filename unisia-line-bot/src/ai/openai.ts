@@ -82,8 +82,8 @@ async function fetchWeatherInfo(country: string): Promise<string | null> {
       return null;
     }
     
-    const data = await response.json();
-    const current = data.current_condition?.[0];
+    const data: any = await response.json();
+    const current: any = data.current_condition?.[0];
     
     if (!current) {
       return null;
