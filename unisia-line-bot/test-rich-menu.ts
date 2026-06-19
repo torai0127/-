@@ -17,6 +17,7 @@ import {
   parseInsuranceTemplate,
   parseCreditCards,
   generateCreditCardInsuranceRecommendation,
+  generatePaidInsuranceRecommendation,
 } from './src/handlers/insurance.js';
 import {
   getConsultationWelcomeMessage,
@@ -330,6 +331,29 @@ const step2Input = `・渡航期間
 console.log(`👤 ユーザー: (テンプレート入力)\n`);
 response = handleInsuranceMessage(testUserId, step2Input, { step: 'waiting_template' });
 console.log(`🤖 ボット: ${response.substring(0, 300)}...\n`);
+
+// シナリオ3: アメリカ・高リスク国
+console.log('=== シナリオ3: アメリカ（高額医療リスク） ===\n');
+
+resetUserState(testUserId);
+const step3Input = getInsuranceWelcomeMessage().replace(
+  '・到着国\n▶',
+  '・到着国\n▶アメリカ'
+).split('ーーーーーーーーーー')[1] || '';
+
+const filledAmerica = `・渡航期間
+▶2週間
+
+・予算（0円もOK）
+▶8000円
+
+・到着国
+▶アメリカ`;
+
+response = handleInsuranceMessage(testUserId, filledAmerica, { step: 'waiting_template' });
+const hasZurich = response.includes('チューリッヒ') || response.includes('zurich');
+console.log(`${hasZurich ? '✅' : '❌'} アメリカ向け高額補償案内: ${hasZurich}`);
+console.log(`🤖 ボット: ${response.substring(0, 350)}...\n`);
 
 // ========================================
 // 5. 保険モードからの自動切替テスト

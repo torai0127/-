@@ -1,5 +1,5 @@
 import { getDatabase } from '../db/index.js';
-import { setUserState, getUserState } from '../db/conversation-state.js';
+import { setUserState } from '../db/conversation-state.js';
 
 // 保険相談のステップ
 type InsuranceStep = 
@@ -113,8 +113,66 @@ const RECOMMENDED_INSURANCE: RecommendedInsurance[] = [
   },
 ];
 
+/** 到着国別の医療リスク・補償目安 */
+interface DestinationProfile {
+  aliases: string[];
+  medicalRisk: 'low' | 'mid' | 'high' | 'very_high';
+  minCoverage: string;
+  notes: string[];
+  preferredInsurance: string[];
+}
+
+const DESTINATION_PROFILES: DestinationProfile[] = [
+  {
+    aliases: ['アメリカ', '米国', 'USA', 'ハワイ', 'グアム'],
+    medicalRisk: 'very_high',
+    minCoverage: '3,000万円以上（1億円推奨）',
+    notes: [
+      '救急・入院の請求が数百万〜数千万円になるケースがあります',
+      'クレカ付帯のみだと治療費上限が不足しがちです',
+    ],
+    preferredInsurance: ['チューリッヒ「スーパー海外保険」', '損保ジャパン「新・海外旅行保険off!」'],
+  },
+  {
+    aliases: ['カナダ', 'イギリス', '英国', 'オーストラリア', '豪州', 'ニュージーランド'],
+    medicalRisk: 'high',
+    minCoverage: '3,000万円以上',
+    notes: ['公立医療でも外国人は高額請求になりやすい国があります'],
+    preferredInsurance: ['チューリッヒ「スーパー海外保険」', '損保ジャパン「新・海外旅行保険off!」'],
+  },
+  {
+    aliases: ['フィリピン', 'タイ', 'ベトナム', 'カンボジア', 'インドネシア', 'マレーシア'],
+    medicalRisk: 'mid',
+    minCoverage: '1,000万円以上',
+    notes: ['私立病院利用時は現地支払い→後日保険請求が一般的です', 'デング熱等の入院も想定しておくと安心です'],
+    preferredInsurance: ['エイチ・エス損保「たびとも」', 'ジェイアイ傷害火災「t@biho（タビホ）」'],
+  },
+  {
+    aliases: ['韓国', '台湾', 'シンガポール', '香港'],
+    medicalRisk: 'mid',
+    minCoverage: '1,000万円以上',
+    notes: ['都市部は医療クオリティが高く、費用も中〜高程度です'],
+    preferredInsurance: ['損保ジャパン「新・海外旅行保険off!」', 'エイチ・エス損保「たびとも」'],
+  },
+  {
+    aliases: ['ヨーロッパ', 'フランス', 'ドイツ', 'イタリア', 'スペイン'],
+    medicalRisk: 'high',
+    minCoverage: '3,000万円以上',
+    notes: ['長距離移動・盗難リスクもセットで検討しましょう'],
+    preferredInsurance: ['損保ジャパン「新・海外旅行保険off!」', 'チューリッヒ「スーパー海外保険」'],
+  },
+];
+
+const COUNTRY_ALIASES: Record<string, string> = {
+  米国: 'アメリカ',
+  USA: 'アメリカ',
+  英国: 'イギリス',
+  豪州: 'オーストラリア',
+};
+
 /**
  * 保険相談の初期メッセージ（コピペ用テンプレート）
+ * ※文言は運用指定のため変更しない
  */
 export function getInsuranceWelcomeMessage(): string {
   return `🛡️ 海外保険の無料相談をご希望ですね！
@@ -130,7 +188,17 @@ export function getInsuranceWelcomeMessage(): string {
 ・到着国
 ▶（例：フィリピン、アメリカ）
 
-ご記入いただければ、最適な保険プランをご提案します✨`;
+ご記入いただければ、最適な保険プランをご提案します✨
+
+ーーーーーーーーーー
+・渡航期間
+▶
+
+・予算（0円もOK）
+▶
+
+・到着国
+▶`;
 }
 
 /**
@@ -173,12 +241,98 @@ export function formatInsuranceLinksBlock(highlightBudget?: string): string {
 }
 
 /**
+ * 到着国を正規化
+ */
+function normalizeDestination(raw: string): string {
+  const trimmed = raw.trim();
+  for (const [alias, canonical] of Object.entries(COUNTRY_ALIASES)) {
+    if (trimmed.includes(alias)) return canonical;
+  }
+  for (const profile of DESTINATION_PROFILES) {
+    for (const alias of profile.aliases) {
+      if (trimmed.includes(alias)) return alias;
+    }
+  }
+  return trimmed;
+}
+
+/**
+ * 到着国プロファイルを取得
+ */
+function getDestinationProfile(destination: string): DestinationProfile | null {
+  const normalized = normalizeDestination(destination);
+  return DESTINATION_PROFILES.find(p =>
+    p.aliases.some(a => normalized.includes(a) || a.includes(normalized))
+  ) || null;
+}
+
+/**
+ * 渡航期間を日数に換算（概算）
+ */
+export function parseTravelPeriodDays(period?: string): number | null {
+  if (!period) return null;
+  const match = period.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+  const num = parseFloat(match[1]);
+  if (period.includes('年')) return Math.round(num * 365);
+  if (period.includes('ヶ月') || period.includes('か月') || period.includes('ヵ月')) return Math.round(num * 30);
+  if (period.includes('週')) return Math.round(num * 7);
+  if (period.includes('日')) return Math.round(num);
+  return Math.round(num * 7); // 数字のみは週扱い
+}
+
+/**
+ * 予算を円数値に換算
+ */
+export function parseBudgetYen(budget?: string): number {
+  if (!budget) return -1;
+  if (budget === '0' || budget.includes('0円') || budget.includes('無料')) return 0;
+  const m = budget.replace(/[,，]/g, '').match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : -1;
+}
+
+/**
+ * ▶形式のフィールド値を抽出（複数ブロックある場合は最後の入力を採用）
+ */
+function extractArrowField(message: string, labelIncludes: string): string | undefined {
+  const lines = message.split('\n');
+  let lastValue: string | undefined;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.includes(labelIncludes)) continue;
+
+    const sameLine = line.match(/▶[︎]?\s*([^（(\n]+)/);
+    if (sameLine?.[1]?.trim()) {
+      const v = sameLine[1].trim();
+      if (v && !v.startsWith('（') && !v.includes('例')) {
+        lastValue = v;
+      }
+    }
+
+    for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+      const next = lines[j].trim();
+      if (next.startsWith('・') && !next.includes(labelIncludes)) break;
+      if (next.startsWith('▶') || next.startsWith('▶︎')) {
+        const v = next.replace(/^[▶︎▶]+\s*/, '').trim();
+        if (v && !v.startsWith('（') && !v.includes('例')) {
+          lastValue = v;
+        }
+        break;
+      }
+    }
+  }
+
+  return lastValue;
+}
+
+/**
  * テンプレート入力を解析
  */
 export function parseInsuranceTemplate(message: string): InsuranceData | null {
   const data: InsuranceData = { step: 'waiting_template' };
 
-  // コロン形式（相談BOTと同じ）
+  // コロン形式
   const periodColon = message.match(/渡航期間[:：]\s*([^\n]+)/);
   const budgetColon = message.match(/予算[^:：\n]*[:：]\s*([^\n]+)/);
   const destColon = message.match(/到着国[:：]\s*([^\n]+)/);
@@ -186,83 +340,182 @@ export function parseInsuranceTemplate(message: string): InsuranceData | null {
   if (budgetColon?.[1]?.trim()) data.budget = budgetColon[1].trim();
   if (destColon?.[1]?.trim()) data.destination = destColon[1].trim();
 
-  // 行ごとに分割して解析（▶形式）
-  const lines = message.split('\n');
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    const nextLine = lines[i + 1]?.trim() || '';
-    
-    // 渡航期間
-    if (line.includes('渡航期間')) {
-      // 次の行に値がある場合
-      if (nextLine.startsWith('▶') || nextLine.startsWith('▶︎')) {
-        const value = nextLine.replace(/^[▶︎▶]+\s*/, '').trim();
-        if (value && !value.includes('例')) {
-          data.travelPeriod = value;
-        }
-      }
-    }
-    
-    // 予算
-    if (line.includes('予算')) {
-      if (nextLine.startsWith('▶') || nextLine.startsWith('▶︎')) {
-        const value = nextLine.replace(/^[▶︎▶]+\s*/, '').trim();
-        if (value && !value.includes('例')) {
-          data.budget = value;
-        }
-      }
-    }
-    
-    // 到着国
-    if (line.includes('到着国')) {
-      if (nextLine.startsWith('▶') || nextLine.startsWith('▶︎')) {
-        const value = nextLine.replace(/^[▶︎▶]+\s*/, '').trim();
-        if (value && !value.includes('例')) {
-          data.destination = value;
-        }
-      }
-    }
-  }
-  
-  // 自然文からも抽出を試みる
+  // ▶形式（コピペブロック対応・最後の入力を優先）
+  const periodArrow = extractArrowField(message, '渡航期間');
+  const budgetArrow = extractArrowField(message, '予算');
+  const destArrow = extractArrowField(message, '到着国');
+  if (periodArrow) data.travelPeriod = periodArrow;
+  if (budgetArrow) data.budget = budgetArrow;
+  if (destArrow) data.destination = destArrow;
+
+  // 自然文フォールバック
   if (!data.travelPeriod) {
-    const periodMatch = message.match(/(\d+(?:週間|ヶ月|か月|ヵ月|年|日間?))/);
-    if (periodMatch) {
-      data.travelPeriod = periodMatch[1];
-    }
+    const periodMatch = message.match(/(\d+(?:\.\d+)?(?:週間|ヶ月|か月|ヵ月|年|日間?))/);
+    if (periodMatch) data.travelPeriod = periodMatch[1];
   }
-  
+
   if (!data.budget) {
-    const budgetMatch = message.match(/(?:予算|費用)[はが]?\s*(0円|無料|\d+[,，]?\d*円)/i) ||
-                        message.match(/(0円|無料|\d+[,，]?\d*円)/);
-    if (budgetMatch) {
-      data.budget = budgetMatch[1];
-    }
+    const budgetMatch =
+      message.match(/(?:予算|費用)[はが]?\s*(0円|無料|\d+[,，]?\d*円)/i) ||
+      message.match(/(0円|無料|\d+[,，]?\d*円)/);
+    if (budgetMatch) data.budget = budgetMatch[1];
   }
-  
+
   if (!data.destination) {
-    const countries = ['フィリピン', 'アメリカ', '韓国', 'タイ', '台湾', 'ハワイ', 'グアム', 'オーストラリア', 'ベトナム', 'シンガポール', 'カナダ', 'イギリス', 'フランス', 'ドイツ', 'イタリア', 'スペイン'];
-    for (const country of countries) {
+    const allCountries = [
+      ...DESTINATION_PROFILES.flatMap(p => p.aliases),
+      'フィリピン', '韓国', 'タイ', '台湾', 'ハワイ', 'グアム',
+      'オーストラリア', 'ベトナム', 'シンガポール', 'カナダ',
+      'イギリス', 'フランス', 'ドイツ', 'イタリア', 'スペイン', '中国', 'インド',
+    ];
+    for (const country of allCountries) {
       if (message.includes(country)) {
-        data.destination = country;
+        data.destination = normalizeDestination(country);
         break;
       }
     }
+  } else {
+    data.destination = normalizeDestination(data.destination);
   }
-  
-  // 必要な情報が揃っているかチェック
+
   if (data.travelPeriod && data.budget && data.destination) {
-    // 予算が0円の場合はクレカ確認ステップへ
-    if (data.budget === '0円' || data.budget === '0' || data.budget.includes('無料')) {
+    if (parseBudgetYen(data.budget) === 0) {
       data.step = 'asking_cards';
     } else {
       data.step = 'recommendation';
     }
     return data;
   }
-  
+
   return null;
+}
+
+/**
+ * 未入力項目の案内
+ */
+function getPartialInputMessage(data: Partial<InsuranceData>): string {
+  const missing: string[] = [];
+  if (!data.travelPeriod) missing.push('・渡航期間');
+  if (!data.budget) missing.push('・予算（0円もOK）');
+  if (!data.destination) missing.push('・到着国');
+
+  return `📝 あと${missing.length}項目のご記入が必要です
+
+未入力：
+${missing.join('\n')}
+
+下のコピペ欄に記入して、そのまま送信してください👇`;
+}
+
+/**
+ * 国別アドバイス文
+ */
+function buildCountryAdviceSection(data: InsuranceData): string {
+  const profile = getDestinationProfile(data.destination || '');
+  if (!profile) {
+    return `🌍 ${data.destination} 向けのポイント\n\n・治療費用は1,000万円以上の補償があると安心\n・携行品・航空機遅延もセットで確認しましょう\n\n`;
+  }
+
+  let section = `🌍 ${data.destination} 向けのポイント\n\n`;
+  section += `・推奨補償額: ${profile.minCoverage}\n`;
+  for (const note of profile.notes) {
+    section += `・${note}\n`;
+  }
+  section += `\n`;
+  return section;
+}
+
+/**
+ * 渡航期間に応じたアドバイス
+ */
+function buildPeriodAdviceSection(data: InsuranceData): string {
+  const days = parseTravelPeriodDays(data.travelPeriod);
+  if (!days) return '';
+
+  let section = `📅 渡航期間: ${data.travelPeriod}（約${days}日）\n\n`;
+
+  if (days <= 14) {
+    section += `・短期旅行なら「たびとも」「off!」の短期プランがコスパ良好です\n`;
+  } else if (days <= 90) {
+    section += `・1〜3ヶ月滞在はカスタマイズ型（off! / タビホ）がおすすめ\n`;
+  } else {
+    section += `・90日超の長期滞在はクレカ付帯の切替＋追加保険の併用を検討\n`;
+    section += `・長期専用プラン（チューリッヒ等）も候補です\n`;
+  }
+
+  section += `\n`;
+  return section;
+}
+
+/**
+ * 加入前チェックリスト
+ */
+function buildInsuranceChecklist(data: InsuranceData): string {
+  const profile = getDestinationProfile(data.destination || '');
+  const minCoverage = profile?.minCoverage || '1,000万円以上';
+
+  return `📋 加入前チェックリスト
+
+☑ 治療・救援費用: ${minCoverage}
+☑ 渡航期間(${data.travelPeriod})をカバー
+☑ 携行品損害（盗難・紛失）
+☑ 航空機遅延・欠航
+☑ クレカ付帯のみの場合は上限額を要確認
+
+※各社サイトで最新の補償内容・料金をご確認ください\n\n`;
+}
+
+/**
+ * 条件に最適な保険1社を選定
+ */
+function pickPrimaryInsurance(data: InsuranceData): RecommendedInsurance {
+  const budget = parseBudgetYen(data.budget);
+  const profile = getDestinationProfile(data.destination || '');
+  const days = parseTravelPeriodDays(data.travelPeriod) || 7;
+
+  if (profile?.preferredInsurance?.length) {
+    for (const pref of profile.preferredInsurance) {
+      const match = RECOMMENDED_INSURANCE.find(i => i.name === pref || i.name.includes(pref.replace(/.*「/, '').replace(/」.*/, '')));
+      if (match) return match;
+    }
+  }
+
+  if (profile?.medicalRisk === 'very_high' || profile?.medicalRisk === 'high') {
+    return RECOMMENDED_INSURANCE.find(i => i.budgetHint === 'high') || RECOMMENDED_INSURANCE[3];
+  }
+
+  if (budget >= 0 && budget < 3000) {
+    return RECOMMENDED_INSURANCE.find(i => i.budgetHint === 'low') || RECOMMENDED_INSURANCE[1];
+  }
+
+  if (days > 60) {
+    return RECOMMENDED_INSURANCE.find(i => i.budgetHint === 'high') || RECOMMENDED_INSURANCE[3];
+  }
+
+  return RECOMMENDED_INSURANCE.find(i => i.budgetHint === 'mid') || RECOMMENDED_INSURANCE[0];
+}
+
+/**
+ * 相談内容をDBに保存
+ */
+function saveInsuranceConsultation(lineUserId: string, data: InsuranceData): void {
+  try {
+    const db = getDatabase();
+    db.prepare(`
+      INSERT INTO insurance_consultations (
+        line_user_id, travel_period, budget, destination, credit_cards, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    `).run(
+      lineUserId,
+      data.travelPeriod || '',
+      data.budget || '',
+      data.destination || '',
+      data.creditCards ? JSON.stringify(data.creditCards) : null,
+      data.step
+    );
+  } catch {
+    // テーブル未作成等は無視
+  }
 }
 
 /**
@@ -379,22 +632,23 @@ export function generateCreditCardInsuranceRecommendation(
   }
   
   // 渡航期間が長い場合の注意
-  const periodMatch = data.travelPeriod?.match(/(\d+)/);
-  if (periodMatch) {
-    const period = parseInt(periodMatch[1]);
-    const periodUnit = data.travelPeriod?.includes('年') ? 'year' : 
-                       data.travelPeriod?.includes('ヶ月') || data.travelPeriod?.includes('か月') ? 'month' : 'week';
-    
-    let daysNeeded = period;
-    if (periodUnit === 'year') daysNeeded = period * 365;
-    if (periodUnit === 'month') daysNeeded = period * 30;
-    if (periodUnit === 'week') daysNeeded = period * 7;
-    
-    if (daysNeeded > totalCoverage) {
-      response += `⚠️ 渡航期間が${data.travelPeriod}の場合、クレカだけでは足りない可能性があります。\n`;
-      response += `追加で海外旅行保険のご検討をおすすめします。\n\n`;
-      response += formatInsuranceLinksBlock(data.budget);
-    }
+  const daysNeeded = parseTravelPeriodDays(data.travelPeriod) || 0;
+  const totalCoverage = cards.reduce((sum, card) => {
+    const info = CREDIT_CARD_INSURANCE[card];
+    return sum + (info?.coverageDays || 0);
+  }, 0);
+
+  if (daysNeeded > totalCoverage) {
+    response += `⚠️ 渡航期間(${data.travelPeriod})に対し、クレカ付帯だけでは日数が不足する可能性があります。\n`;
+    response += `追加で海外旅行保険のご検討をおすすめします。\n\n`;
+    response += buildCountryAdviceSection(data);
+    response += formatInsuranceLinksBlock(data.budget);
+    response += buildInsuranceChecklist(data);
+  } else if (getDestinationProfile(data.destination || '')?.medicalRisk === 'very_high') {
+    response += `⚠️ ${data.destination}は医療費が高額になりやすい国です。\n`;
+    response += `クレカ付帯の治療費上限を確認し、不足する場合は追加保険をご検討ください。\n\n`;
+    const primary = pickPrimaryInsurance(data);
+    response += `⭐ 追加候補: ${primary.name}\n👉 ${primary.url}\n\n`;
   }
 
   response += `他にご不明点があればお気軽にどうぞ！`;
@@ -406,32 +660,32 @@ export function generateCreditCardInsuranceRecommendation(
  * 有料保険の提案を生成
  */
 export function generatePaidInsuranceRecommendation(data: InsuranceData): string {
-  let response = `🛡️ おすすめの海外旅行保険をご紹介します！\n\n`;
+  const primary = pickPrimaryInsurance(data);
+
+  let response = `🛡️ ${data.destination}向け・おすすめの海外旅行保険\n\n`;
   response += `【ご入力内容】\n`;
   response += `・渡航期間: ${data.travelPeriod}\n`;
   response += `・予算: ${data.budget}\n`;
   response += `・到着国: ${data.destination}\n\n`;
 
+  response += buildCountryAdviceSection(data);
+  response += buildPeriodAdviceSection(data);
+
+  response += `⭐ 第一候補\n`;
+  response += `【${primary.name}】\n`;
+  response += `💰 ${primary.price}\n`;
+  response += `✅ ${primary.features.join('\n✅ ')}\n`;
+  response += `👉 ${primary.url}\n\n`;
+
   response += formatInsuranceLinksBlock(data.budget);
+  response += buildInsuranceChecklist(data);
 
   response += `📌 選び方のポイント\n\n`;
-  response += `・治療費用は最低300万円以上がおすすめ\n`;
-  response += `・${data.destination}渡航はクレカ対応の病院が多い\n`;
-  response += `・キャッシュレス対応があると安心\n\n`;
+  response += `・治療費用は${getDestinationProfile(data.destination || '')?.minCoverage || '1,000万円以上'}が目安\n`;
+  response += `・${data.destination}渡航は公式サイトで補償内容を必ず確認\n`;
+  response += `・申込は出発前日まで（当日申込可の商品もあります）\n\n`;
 
-  const budgetMatch = data.budget?.match(/(\d+)/);
-  if (budgetMatch) {
-    const budget = parseInt(budgetMatch[1], 10);
-    if (budget < 3000) {
-      response += `💡 予算${data.budget}なら「たびとも」がコスパ最強です！\n`;
-      response += `👉 https://www.hs-hoken.jp/products/travel/tabidomo/\n`;
-    } else if (budget < 10000) {
-      response += `💡 予算${data.budget}なら「off!」でカスタマイズがおすすめ！\n`;
-      response += `👉 https://www.sompo-japan.co.jp/kinsurance/travel/off/\n`;
-    }
-  }
-
-  response += `\n※リンク先は各社公式サイトです。内容は最新情報をご確認ください。`;
+  response += `※リンク先は各社公式サイトです。`;
   return response;
 }
 
@@ -453,17 +707,30 @@ export function handleInsuranceMessage(
     const parsed = parseInsuranceTemplate(message);
     
     if (parsed) {
-      // 予算0円の場合
+      saveInsuranceConsultation(lineUserId, parsed);
+
       if (parsed.step === 'asking_cards') {
         setUserState(lineUserId, 'insurance', parsed);
         return getAskCreditCardsMessage(parsed);
       }
-      // 有料保険の提案
+
       setUserState(lineUserId, 'insurance', { ...parsed, step: 'completed' });
       return generatePaidInsuranceRecommendation(parsed);
     }
+
+    // 部分入力の案内
+    const partial: Partial<InsuranceData> = {
+      travelPeriod: extractArrowField(message, '渡航期間'),
+      budget: extractArrowField(message, '予算'),
+      destination: extractArrowField(message, '到着国')
+        ? normalizeDestination(extractArrowField(message, '到着国')!)
+        : undefined,
+    };
+    const filledCount = [partial.travelPeriod, partial.budget, partial.destination].filter(Boolean).length;
+    if (filledCount > 0 && filledCount < 3) {
+      return getPartialInputMessage(partial);
+    }
     
-    // テンプレートが不完全な場合
     return getInsuranceWelcomeMessage();
   }
   
