@@ -194,6 +194,41 @@ https://lin.ee/ZgWRQ6U
   }
 }
 
+/**
+ * 相談BOTが処理すべきpostbackか判定
+ */
+function resolveConsultationPostbackMode(data: string): ConversationMode | null {
+  // 航空券・タブ等は相談BOTでは処理しない
+  if (
+    data.includes('menu_flight') ||
+    data.includes('flight_ticket') ||
+    data.includes('action=flight') ||
+    data.includes('tab_') ||
+    data.includes('menu_main') ||
+    data.includes('menu_lstep')
+  ) {
+    return null;
+  }
+
+  if (data.includes('insurance') || data.includes('menu_insurance')) {
+    return 'insurance';
+  }
+  if (data.includes('emergency') || data.includes('menu_emergency')) {
+    return 'emergency';
+  }
+  if (data.includes('study') || data.includes('menu_study')) {
+    return 'study_abroad';
+  }
+  if (data.includes('job') || data.includes('menu_job')) {
+    return 'job_change';
+  }
+  if (data.includes('line_support') || data.includes('menu_line_support')) {
+    return 'overseas_qa';
+  }
+
+  return null;
+}
+
 export async function handleEvent(event: WebhookEvent): Promise<void> {
   // Postbackイベント（リッチメニュータップ）の処理
   if (event.type === 'postback') {
@@ -207,18 +242,11 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     }
     
     console.log(`📩 Postback received from ${userId}: ${data}`);
-    
-    let mode: ConversationMode = 'overseas_qa';
-    if (data.includes('insurance') || data.includes('menu_insurance')) {
-      mode = 'insurance';
-    } else if (data.includes('emergency') || data.includes('menu_emergency')) {
-      mode = 'emergency';
-    } else if (data.includes('study') || data.includes('menu_study')) {
-      mode = 'study_abroad';
-    } else if (data.includes('job') || data.includes('menu_job')) {
-      mode = 'job_change';
-    } else if (data.includes('line_support') || data.includes('menu_line')) {
-      mode = 'overseas_qa';
+
+    const mode = resolveConsultationPostbackMode(data);
+    if (!mode) {
+      console.log(`⏭️ Ignoring non-consultation postback: ${data}`);
+      return;
     }
 
     if (shouldSkipMenuWelcome(userId, mode)) {
@@ -323,8 +351,13 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       return;
     }
 
-    // ★ 相談テンプレート／ショートカット入力
-    if (isConsultationTemplateInput(userMessage)) {
+    // ★ 相談テンプレート／ショートカット入力（航空券メニュー文言は除外）
+    if (
+      isConsultationTemplateInput(userMessage) &&
+      !userMessage.includes('航空券') &&
+      !userMessage.includes('格安購入券') &&
+      !userMessage.includes('いきたい地域')
+    ) {
       console.log(`🌏 Consultation template/keyword input detected`);
       setUserState(userId, 'overseas_qa');
       const history = getConversationHistory(userId, 10);

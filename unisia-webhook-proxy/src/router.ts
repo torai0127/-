@@ -48,12 +48,43 @@ export function routeEvent(event: WebhookEvent): RoutingResult {
 /**
  * Postbackイベントのルーティング
  */
+function postbackMatches(data: string, pattern: string): boolean {
+  if (data === pattern) return true;
+  // Elme等が action=menu_flight_ticket 形式で送る場合
+  return data.includes(pattern);
+}
+
+/**
+ * ルール未登録のpostbackを推定（Elmeへ流す前にボットへ振り分け）
+ */
+function inferPostbackTarget(data: string): ForwardTarget | null {
+  if (data.includes('menu_flight') || data.includes('flight_ticket') || data.includes('action=flight')) {
+    return 'flight';
+  }
+  if (data.includes('menu_insurance') || data.includes('insurance')) {
+    return 'consultation';
+  }
+  if (data.includes('menu_line_support') || data.includes('line_support')) {
+    return 'consultation';
+  }
+  if (data.includes('menu_job') || data.includes('job_support')) {
+    return 'consultation';
+  }
+  if (data.includes('menu_study') || data.includes('study_abroad')) {
+    return 'consultation';
+  }
+  if (data.includes('menu_emergency') || data.includes('emergency')) {
+    return 'consultation';
+  }
+  return null;
+}
+
 function routePostback(event: PostbackEvent, userId: string | null): RoutingResult {
   const data = event.postback.data;
   
   // ルールをチェック
   for (const rule of ROUTE_RULES) {
-    if (rule.type === 'postback' && data === rule.pattern) {
+    if (rule.type === 'postback' && postbackMatches(data, rule.pattern)) {
       const newMode = targetToMode(rule.target);
       
       if (userId && newMode !== 'default') {
@@ -67,6 +98,21 @@ function routePostback(event: PostbackEvent, userId: string | null): RoutingResu
         newMode,
       };
     }
+  }
+
+  // 推定ルーティング（postback形式の揺れ対策）
+  const inferred = inferPostbackTarget(data);
+  if (inferred) {
+    const newMode = targetToMode(inferred);
+    if (userId && newMode !== 'default') {
+      setUserMode(userId, newMode);
+    }
+    return {
+      target: inferred,
+      reason: `postback inferred: ${data}`,
+      shouldUpdateMode: true,
+      newMode,
+    };
   }
   
   // マッチしない場合はデフォルト
