@@ -195,6 +195,45 @@ https://lin.ee/ZgWRQ6U
 }
 
 export async function handleEvent(event: WebhookEvent): Promise<void> {
+  // Postbackイベント（リッチメニュータップ）の処理
+  if (event.type === 'postback') {
+    const postbackEvent = event as any;
+    const userId = postbackEvent.source?.userId;
+    const data = postbackEvent.postback?.data || '';
+    
+    if (!userId || !lineClient) {
+      console.warn('No userId or lineClient for postback');
+      return;
+    }
+    
+    console.log(`📩 Postback received from ${userId}: ${data}`);
+    
+    let mode: ConversationMode = 'overseas_qa';
+    if (data.includes('insurance') || data.includes('menu_insurance')) {
+      mode = 'insurance';
+    } else if (data.includes('emergency') || data.includes('menu_emergency')) {
+      mode = 'emergency';
+    } else if (data.includes('study') || data.includes('menu_study')) {
+      mode = 'study_abroad';
+    } else if (data.includes('job') || data.includes('menu_job')) {
+      mode = 'job_change';
+    } else if (data.includes('line_support') || data.includes('menu_line')) {
+      mode = 'overseas_qa';
+    }
+    
+    setUserState(userId, mode);
+    const initialMessage = getRichMenuInitialMessage(mode);
+    
+    if (initialMessage) {
+      await lineClient.replyMessage({
+        replyToken: postbackEvent.replyToken,
+        messages: [{ type: 'text', text: initialMessage }],
+      });
+      console.log(`📤 Postback reply sent for mode: ${mode}`);
+    }
+    return;
+  }
+
   if (event.type !== 'message' || event.message.type !== 'text') {
     return;
   }

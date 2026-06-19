@@ -4,6 +4,7 @@ import { WebhookEvent } from '@line/bot-sdk';
 import dotenv from 'dotenv';
 import { handleEvent } from './line/handler.js';
 import { isLineConfigured } from './line/client.js';
+import { validateLineToken } from './line/token-validator.js';
 import { initDatabase } from './db/index.js';
 
 dotenv.config();
@@ -15,11 +16,14 @@ const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
 
 initDatabase();
 
-app.get('/health', (_, res) => {
+app.get('/health', async (_, res) => {
+  const tokenStatus = await validateLineToken();
   res.json({ 
-    status: 'ok', 
+    status: tokenStatus.valid ? 'ok' : 'degraded',
     service: 'unisia-flight-bot',
     lineConfigured: isLineConfigured(),
+    lineTokenValid: tokenStatus.valid,
+    lineTokenError: tokenStatus.error,
     timestamp: new Date().toISOString() 
   });
 });
@@ -129,9 +133,18 @@ app.get('/api/stats', async (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🛫 Unisia Flight Bot running on port ${PORT}`);
   console.log(`📡 Webhook URL: http://localhost:${PORT}/webhook`);
+  
+  if (isLineConfigured()) {
+    const tokenStatus = await validateLineToken();
+    if (tokenStatus.valid) {
+      console.log('✅ LINE token validated successfully');
+    } else {
+      console.error(`❌ LINE token INVALID: ${tokenStatus.error}`);
+    }
+  }
   
   // Keep-alive: 自己pingでスリープを防止（Render無料枠対策）
   const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
