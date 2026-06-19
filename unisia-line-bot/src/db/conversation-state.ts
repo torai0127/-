@@ -89,6 +89,27 @@ export function resetUserState(lineUserId: string): void {
 }
 
 /**
+ * リッチメニューのメニュー文言かどうか（初回挨拶用）
+ * ユーザーの実際の質問と区別する
+ */
+export function isMenuTriggerMessage(message: string): boolean {
+  const menuTriggers = [
+    '海外LINEサポート', '海外lineサポート', 'LINEサポート',
+    '海外保険案内サポート', '海外保険サポート', '保険案内サポート',
+    '帰国後転職サポート', '転職サポート',
+    '海外留学無料相談会', '海外留学無料 相談会', '留学無料相談', '留学相談会',
+    '海外緊急対応', '緊急対応サポート',
+    'lin.ee/ZgWRQ6U',
+    'いかがなさいましたでしょうか',
+  ];
+  if (menuTriggers.some(t => message.includes(t))) return true;
+  if (message.includes('渡航期間') && message.includes('予算') && message.includes('到着国')) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * リッチメニューのキーワードからモードを検出
  */
 export function detectModeFromKeyword(message: string): ConversationMode | null {
@@ -139,11 +160,7 @@ export function detectModeFromKeyword(message: string): ConversationMode | null 
   if (message.includes('ご質問ありがとうございます') && message.includes('チャット')) {
     return 'overseas_qa';
   }
-  // 「質問」キーワード単体でも検出（他のモードより後に配置）
-  if (message.includes('質問') && !message.includes('保険') && !message.includes('転職') && !message.includes('留学')) {
-    return 'overseas_qa';
-  }
-  
+
   return null;
 }
 

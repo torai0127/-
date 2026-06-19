@@ -318,9 +318,18 @@ function setUserState(userId: string, state: UserState): void {
   userStates.set(userId, state);
 }
 
-/**
- * 航空券検索の入力テンプレートを表示するキーワード
- */
+/** 相談BOT向けの質問（誤ルーティング時のガード） */
+function isConsultationOnlyMessage(message: string): boolean {
+  if (isCompleteFlightRequest(message)) return false;
+  const consultationKeywords = [
+    '天気', '気温', '気候', '季節',
+    '治安', '安全', '危険',
+    '物価', '費用', '相場', '観光', 'グルメ',
+    'Wi-Fi', 'wifi', 'SIM', 'ビザ', '入国', 'マナー', '文化',
+  ];
+  return consultationKeywords.some(kw => message.includes(kw));
+}
+
 function isFlightTemplateRequest(message: string): boolean {
   const templateKeywords = [
     '航空券',
@@ -403,8 +412,11 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     let response: string;
     
     // 航空券検索のpostback
-    if (data === 'action=flight_search' || data.includes('flight')) {
+    if (data === 'action=flight_search' || data.includes('menu_flight') || data === 'menu_flight_ticket') {
       response = getFlightSearchTemplate();
+    } else if (data.includes('line_support') || data.includes('insurance') || data.includes('emergency') || data.includes('study') || data.includes('job')) {
+      // 相談系postbackは相談BOT側で処理される想定
+      return;
     } else {
       response = 'メニューを選択してください。';
     }
@@ -444,9 +456,20 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     const state = getUserState(userId);
     
     let response: string;
-    
+
+    // 相談向け質問が誤って届いた場合は案内のみ（ホテル検索に流さない）
+    if (isConsultationOnlyMessage(userMessage)) {
+      setUserState(userId, { step: 'idle' });
+      response = `こちらは航空券サポートです ✈️
+
+天気・治安・旅行のご質問は、リッチメニューの「海外LINEサポート」からお送りください。
+
+例）
+・フィリピンの天気は？
+・韓国の治安は？`;
+    }
     // ホテル検索中は最優先で処理（航空券検索のキーワードと重複するため）
-    if (state.step === 'hotel_search') {
+    else if (state.step === 'hotel_search') {
       console.log('🏨 Hotel search in progress (priority)');
       response = await handleHotelQuery(userId, userMessage, state.hotelContext);
     }

@@ -106,14 +106,12 @@ export const ROUTE_RULES: RouteRule[] = [
   { type: 'keyword', pattern: '飛行機', target: 'flight', description: '飛行機検索' },
   { type: 'keyword', pattern: '格安', target: 'flight', description: '格安航空券' },
   { type: 'keyword', pattern: 'セール', target: 'flight', description: 'セール情報' },
-  { type: 'keyword', pattern: '治安', target: 'flight', description: '治安情報' },
   { type: 'keyword', pattern: 'アンケート', target: 'flight', description: 'アンケート' },
   
   // エルメのリッチメニューからの航空券検索フォーム
   { type: 'keyword', pattern: 'いきたい地域', target: 'flight', description: '航空券検索フォーム' },
   { type: 'keyword', pattern: 'いきたい時期', target: 'flight', description: '航空券検索フォーム' },
   { type: 'keyword', pattern: '期間行きたい', target: 'flight', description: '航空券検索フォーム' },
-  { type: 'keyword', pattern: '泊', target: 'flight', description: '航空券検索（宿泊）' },
   { type: 'keyword', pattern: '行きたい', target: 'flight', description: '航空券検索' },
   
   // 相談ボットへ（その他5つのサポート関連）
@@ -138,6 +136,10 @@ export const ROUTE_RULES: RouteRule[] = [
   { type: 'keyword', pattern: '気温', target: 'consultation', description: '気温情報' },
   { type: 'keyword', pattern: '気候', target: 'consultation', description: '気候情報' },
   { type: 'keyword', pattern: '季節', target: 'consultation', description: '季節情報' },
+
+  // 治安・安全
+  { type: 'keyword', pattern: '治安', target: 'consultation', description: '治安情報' },
+  { type: 'keyword', pattern: '安全', target: 'consultation', description: '安全情報' },
   
   // 物価・費用
   { type: 'keyword', pattern: '物価', target: 'consultation', description: '物価情報' },

@@ -10,6 +10,7 @@ import {
   isConversationTimedOut,
   detectModeFromKeyword,
   isInsuranceTemplateInput,
+  isMenuTriggerMessage,
   addToManualQueue,
   ConversationMode,
 } from '../db/conversation-state.js';
@@ -290,12 +291,10 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
       return;
     }
     
-    // リッチメニューのキーワードを検出
+    // リッチメニューのキーワードを検出（メニュー文言のみ初回挨拶を返す）
     const newMode = detectModeFromKeyword(userMessage);
     
-    // 新しいモードが検出された場合の処理
     if (newMode) {
-      // 同じモードでも、保険モードの場合は継続処理
       if (currentMode === 'insurance' && newMode === 'insurance') {
         console.log(`📝 Continuing insurance mode`);
         const response = handleInsuranceMessage(userId, userMessage, state?.modeData);
@@ -315,13 +314,12 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
         }
         return;
       }
-      
-      // 異なるモードへの切り替え、または新規モード開始
-      if (currentMode !== newMode || currentMode === 'idle') {
-        console.log(`🔄 Mode switch: ${currentMode} -> ${newMode}`);
+
+      // メニュー文言のときだけ挨拶を返す（質問文は下の通常処理へ）
+      if (isMenuTriggerMessage(userMessage) && (currentMode !== newMode || currentMode === 'idle')) {
+        console.log(`🔄 Mode switch (menu): ${currentMode} -> ${newMode}`);
         setUserState(userId, newMode);
         
-        // 初期メッセージを返す
         const initialMessage = getRichMenuInitialMessage(newMode);
         
         saveConversation({
@@ -339,6 +337,14 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
           console.log(`📤 Initial message for mode ${newMode}`);
         }
         return;
+      }
+
+      // モードだけ更新して質問処理を続行
+      if (currentMode !== newMode) {
+        console.log(`🔄 Mode update: ${currentMode} -> ${newMode}`);
+        setUserState(userId, newMode);
+        currentMode = newMode;
+        state = getUserState(userId);
       }
     }
     

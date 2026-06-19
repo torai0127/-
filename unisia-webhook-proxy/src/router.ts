@@ -78,14 +78,58 @@ function routePostback(event: PostbackEvent, userId: string | null): RoutingResu
  * これらのキーワードはモードに優先して航空券ボットに転送
  */
 function isFlightSearchForm(text: string): boolean {
-  // 「いきたい地域」「いきたい時期」「期間」「泊」などが複数含まれている場合
   const flightFormKeywords = ['いきたい地域', '行きたい地域', 'いきたい時期', '行きたい時期', '出発空港'];
   const hasFormKeyword = flightFormKeywords.some(kw => text.includes(kw));
-  
-  // 「○泊」パターンも航空券検索フォーム
   const hasStayPattern = /\d+泊/.test(text);
-  
   return hasFormKeyword || hasStayPattern;
+}
+
+/** 海外Q&A（天気・治安など）— flightモード中でも相談BOTへ */
+function isConsultationQuestion(text: string): boolean {
+  if (isFlightSearchForm(text)) return false;
+
+  const qaKeywords = [
+    '天気', '気温', '気候', '季節',
+    '治安', '安全', '危険',
+    '物価', '費用', '相場', '予算',
+    'おすすめ', 'オススメ', '観光', 'スポット',
+    'グルメ', '料理', '食べ物', 'レストラン',
+    'Wi-Fi', 'wifi', 'SIM', 'ビザ', '入国', 'パスポート',
+    '持ち物', '服装', '文化', 'マナー',
+    '教えて', '知りたい', 'どう', '状況',
+  ];
+  if (qaKeywords.some(kw => text.includes(kw))) return true;
+
+  const countries = [
+    'フィリピン', '韓国', 'タイ', '台湾', 'ハワイ', 'グアム',
+    'オーストラリア', 'ベトナム', 'シンガポール', 'アメリカ',
+  ];
+  if (countries.some(c => text.includes(c)) && !text.includes('いきたい')) {
+    return true;
+  }
+
+  return false;
+}
+
+/** リッチメニューからの相談モード切替テキスト */
+function isConsultationMenuTrigger(text: string): boolean {
+  const triggers = [
+    '海外LINEサポート', '海外lineサポート', 'LINEサポート', 'lineサポート',
+    '海外保険案内サポート', '海外保険サポート', '保険案内サポート',
+    '帰国後転職サポート', '転職サポート',
+    '海外留学無料相談会', '海外留学無料 相談会', '留学無料相談', '留学相談会',
+    '海外緊急対応', '緊急対応',
+    '海外相談', '相談したい',
+  ];
+  return triggers.some(t => text.includes(t));
+}
+
+/** リッチメニューからの航空券モード切替テキスト */
+function isFlightMenuTrigger(text: string): boolean {
+  const triggers = [
+    '格安航空券サポート', '格安購入券サポート', '航空券サポート',
+  ];
+  return triggers.some(t => text.includes(t));
 }
 
 /**
@@ -125,11 +169,9 @@ function routeTextMessage(event: MessageEvent, userId: string | null): RoutingRe
     }
   }
   
-  // ★ 航空券検索フォームは最優先でflightに転送（モードを無視）
+  // ★ 航空券検索フォームは最優先でflightに転送
   if (isFlightSearchForm(text)) {
-    if (userId) {
-      setUserMode(userId, 'flight');
-    }
+    if (userId) setUserMode(userId, 'flight');
     return {
       target: 'flight',
       reason: 'flight search form (priority)',
@@ -137,15 +179,46 @@ function routeTextMessage(event: MessageEvent, userId: string | null): RoutingRe
       newMode: 'flight',
     };
   }
-  
-  // 現在のモードをチェック
+
+  // ★ 相談Q&Aはflightモードより優先（航空券後に天気・治安を聞くケース）
+  if (isConsultationQuestion(text)) {
+    if (userId) setUserMode(userId, 'consultation');
+    return {
+      target: 'consultation',
+      reason: 'consultation Q&A (overrides flight mode)',
+      shouldUpdateMode: true,
+      newMode: 'consultation',
+    };
+  }
+
+  // ★ 相談リッチメニュー文言もflightモードより優先
+  if (isConsultationMenuTrigger(text)) {
+    if (userId) setUserMode(userId, 'consultation');
+    return {
+      target: 'consultation',
+      reason: 'consultation menu trigger (overrides flight mode)',
+      shouldUpdateMode: true,
+      newMode: 'consultation',
+    };
+  }
+
+  // 航空券メニュー文言
+  if (isFlightMenuTrigger(text)) {
+    if (userId) setUserMode(userId, 'flight');
+    return {
+      target: 'flight',
+      reason: 'flight menu trigger',
+      shouldUpdateMode: true,
+      newMode: 'flight',
+    };
+  }
+
+  // 現在のモードをチェック（上記の明示切替より後）
   if (userId) {
     const currentMode = getUserMode(userId);
-    
+
     if (currentMode !== 'default') {
-      // モードが設定されている場合、そのモードの転送先へ
       touchUserMode(userId);
-      
       return {
         target: modeToTarget(currentMode),
         reason: `current mode: ${currentMode}`,
