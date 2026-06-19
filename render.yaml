@@ -15,17 +15,9 @@ services:
       - key: LINE_CHANNEL_SECRET
         sync: false
       - key: CONSULTATION_BOT_URL
-        fromService:
-          name: unisia-consultation-bot
-          type: web
-          property: host
-        # 実際の値は手動設定: https://unisia-consultation-bot.onrender.com/webhook
+        value: https://unisia-consultation-bot.onrender.com/webhook
       - key: FLIGHT_BOT_URL
-        fromService:
-          name: unisia-flight-bot
-          type: web
-          property: host
-        # 実際の値は手動設定: https://unisia-flight-bot.onrender.com/webhook
+        value: https://unisia-flight-bot.onrender.com/webhook
       - key: MA_TOOL
         value: elme
       - key: ELME_WEBHOOK_URL

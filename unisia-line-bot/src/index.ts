@@ -58,10 +58,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   const events: WebhookEvent[] = parsedBody.events || [];
   console.log(`📨 Received ${events.length} event(s)`);
   
-  // すぐに200を返す
-  res.json({ success: true });
-  
-  // 非同期でイベント処理
+  // 返信トークン失効を防ぐため、処理完了後に200を返す
   for (const event of events) {
     try {
       await handleEvent(event);
@@ -69,6 +66,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       console.error('Event handling error:', error);
     }
   }
+
+  res.json({ success: true });
 });
 
 // その他のエンドポイント用

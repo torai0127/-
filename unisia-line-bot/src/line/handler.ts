@@ -1,5 +1,6 @@
 import { WebhookEvent, MessageEvent, TextMessage } from '@line/bot-sdk';
 import { lineClient } from './client.js';
+import { safeReplyText } from './safe-reply.js';
 import { generateResponse, isOverseasQuestion } from '../ai/openai.js';
 import { saveConversation, getConversationHistory } from '../db/conversations.js';
 import { saveUnansweredQuestion, categorizeQuestion } from '../db/questions.js';
@@ -265,10 +266,7 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
     const initialMessage = getRichMenuInitialMessage(mode);
 
     if (initialMessage) {
-      await lineClient.replyMessage({
-        replyToken: postbackEvent.replyToken,
-        messages: [{ type: 'text', text: initialMessage }],
-      });
+      await safeReplyText(postbackEvent.replyToken, userId, initialMessage);
       markMenuWelcomeSent(userId, mode);
       console.log(`📤 Postback reply sent for mode: ${mode}`);
     }

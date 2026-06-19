@@ -109,27 +109,18 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
     }
   }
   
-  // 2. エルメにも転送（顧客管理・ステップ配信のため）
-  const skipElmeForBotMenuPostback =
-    event.type === 'postback' &&
-    (routingResult.target === 'consultation' || routingResult.target === 'flight') &&
-    success;
-
+  // 2. エルメにも常に転送（BOT無反応時のフォールバック＋顧客管理）
   const elmeUrl = process.env.ELME_WEBHOOK_URL;
   if (elmeUrl) {
-    if (!skipElmeForBotMenuPostback) {
-      try {
-        const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
-        if (elmeResult.success) {
-          console.log(`✅ Also forwarded to Elme (${elmeResult.responseTimeMs}ms)`);
-        } else {
-          console.warn(`⚠️ Failed to forward to Elme: ${elmeResult.error}`);
-        }
-      } catch (error) {
-        console.warn('⚠️ Elme forward error:', error);
+    try {
+      const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
+      if (elmeResult.success) {
+        console.log(`✅ Also forwarded to Elme (${elmeResult.responseTimeMs}ms)`);
+      } else {
+        console.warn(`⚠️ Failed to forward to Elme: ${elmeResult.error}`);
       }
-    } else {
-      console.log(`⏭️ Skipped Elme forward (bot handled postback: ${routingResult.target})`);
+    } catch (error) {
+      console.warn('⚠️ Elme forward error:', error);
     }
   }
   
@@ -150,18 +141,6 @@ async function processEvent(event: WebhookEvent, originalBody: any): Promise<voi
     console.log(`✅ Forwarded to ${routingResult.target} (${responseTimeMs}ms)`);
   } else {
     console.error(`❌ Failed to forward to ${routingResult.target}${responseTimeMs ? ` (${responseTimeMs}ms)` : ''}`);
-    // BOT転送失敗時はElmeへフォールバック（無反応防止）
-    if (elmeUrl && event.type === 'postback' && (routingResult.target === 'consultation' || routingResult.target === 'flight')) {
-      console.warn(`⚠️ Falling back to Elme after bot forward failure`);
-      try {
-        const elmeResult = await forwardToMA(singleEventBody, { tool: 'elme', webhookUrl: elmeUrl });
-        if (elmeResult.success) {
-          console.log(`✅ Elme fallback succeeded (${elmeResult.responseTimeMs}ms)`);
-        }
-      } catch (error) {
-        console.warn('⚠️ Elme fallback error:', error);
-      }
-    }
   }
 }
 
@@ -247,4 +226,20 @@ app.listen(PORT, () => {
   console.log(`📡 Webhook URL: http://localhost:${PORT}/webhook`);
   console.log(`🛠️ MA Tool: ${process.env.MA_TOOL || 'lstep'}`);
   console.log(`📍 Default Forward: ${process.env.DEFAULT_FORWARD || 'ma'}`);
+
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+  if (RENDER_URL) {
+    const PING_INTERVAL = 10 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        const response = await fetch(`${RENDER_URL}/health`);
+        if (response.ok) {
+          console.log('💓 Keep-alive ping successful');
+        }
+      } catch {
+        console.log('⚠️ Keep-alive ping failed');
+      }
+    }, PING_INTERVAL);
+    console.log('💓 Keep-alive enabled: pinging every 10 minutes');
+  }
 });

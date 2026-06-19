@@ -1,5 +1,6 @@
 import { WebhookEvent, MessageEvent, TextMessage } from '@line/bot-sdk';
 import { lineClient } from './client.js';
+import { safeReplyText } from './safe-reply.js';
 // OpenAI不使用 - テキスト解析のみで動作
 import { 
   generateGoogleFlightsQueryUrl, 
@@ -422,20 +423,14 @@ export async function handleEvent(event: WebhookEvent): Promise<void> {
         response = 'メニューを選択してください。';
       }
       
-      await lineClient.replyMessage({
-        replyToken: postbackEvent.replyToken,
-        messages: [{ type: 'text', text: response }],
-      });
+      await safeReplyText(postbackEvent.replyToken, userId, response);
     } catch (error) {
       console.error('❌ Postback reply failed:', error);
-      try {
-        await lineClient.replyMessage({
-          replyToken: postbackEvent.replyToken,
-          messages: [{ type: 'text', text: '少し時間をおいて、もう一度リッチメニューからお試しください ✈️' }],
-        });
-      } catch {
-        // replyToken expired
-      }
+      await safeReplyText(
+        postbackEvent.replyToken,
+        userId,
+        '少し時間をおいて、もう一度リッチメニューからお試しください ✈️'
+      );
     }
     
     return;
