@@ -88,11 +88,131 @@ function getUserState(userId: string): UserState {
 function isCompleteFlightRequest(message: string): boolean {
   // 「いきたい地域」と「いきたい時期」または「期間」が含まれている場合
   const hasDestination = message.includes('いきたい地域') || message.includes('行きたい地域');
-  const hasTime = message.includes('いきたい時期') || message.includes('行きたい時期') || message.includes('月');
+  const hasTime = message.includes('いきたい時期') || message.includes('行きたい時期')
+    || message.includes('月') || /\d{1,2}\/\d{1,2}/.test(message);
   const hasDuration = message.includes('泊') || message.includes('期間') || message.includes('日間') || message.includes('週間');
   
   // 目的地 + 時期/期間のどちらかがあれば完全なリクエストとみなす
   return hasDestination && (hasTime || hasDuration);
+}
+
+function formatIsoDate(year: number, month: number, day: number): string {
+  return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
+function resolveYearForMonth(month: number, explicitYear?: number): number {
+  const baseYear = explicitYear ?? new Date().getFullYear();
+  if (explicitYear) return explicitYear;
+  return month < new Date().getMonth() + 1 ? baseYear + 1 : baseYear;
+}
+
+/** テンプレート項目の値を取得（▶形式・次行入力に対応） */
+function extractTemplateFieldValue(message: string, label: string): string | null {
+  const lines = message.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.includes(label)) continue;
+
+    const sameLine = line.match(new RegExp(`${label}[:\\s：]*(.+)`, 'i'));
+    if (sameLine?.[1]?.trim()) {
+      const value = sameLine[1].trim().replace(/^▶[︎]?\s*/, '').trim();
+      if (value && !value.startsWith('例')) return value;
+    }
+
+    for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+      const next = lines[j].trim();
+      if (!next || next.startsWith('━') || next.startsWith('【') || next.includes(':')) continue;
+      const value = next.replace(/^▶[︎]?\s*/, '').trim();
+      if (value && !value.startsWith('例')) return value;
+    }
+  }
+  return null;
+}
+
+/** いきたい時期の文字列から出発日・帰国日を result に設定 */
+function parseTravelTimeString(timeStr: string, result: Record<string, unknown>): void {
+  const cleaned = timeStr.replace(/^▶[︎]?\s*/, '').trim();
+  const year = new Date().getFullYear();
+
+  // スラッシュ形式: 7/28〜29, 7/28-8/5, 2026/7/28
+  const slashRangeMatch = cleaned.match(
+    /(?:(\d{4})\/)?(\d{1,2})\/(\d{1,2})\s*[〜~\-－ー]+\s*(?:(\d{1,2})\/)?(\d{1,2})/
+  );
+  if (slashRangeMatch) {
+    const explicitYear = slashRangeMatch[1] ? parseInt(slashRangeMatch[1], 10) : undefined;
+    const startMonth = parseInt(slashRangeMatch[2], 10);
+    const startDay = parseInt(slashRangeMatch[3], 10);
+    const endMonth = slashRangeMatch[4] ? parseInt(slashRangeMatch[4], 10) : startMonth;
+    const endDay = parseInt(slashRangeMatch[5], 10);
+    const startYear = resolveYearForMonth(startMonth, explicitYear);
+    const endYear = endMonth < startMonth ? startYear + 1 : startYear;
+
+    result.departureDate = formatIsoDate(startYear, startMonth, startDay);
+    result.returnDate = formatIsoDate(endYear, endMonth, endDay);
+    result.isFlexibleDate = false;
+    return;
+  }
+
+  const slashSingleMatch = cleaned.match(/(?:(\d{4})\/)?(\d{1,2})\/(\d{1,2})/);
+  if (slashSingleMatch) {
+    const explicitYear = slashSingleMatch[1] ? parseInt(slashSingleMatch[1], 10) : undefined;
+    const month = parseInt(slashSingleMatch[2], 10);
+    const day = parseInt(slashSingleMatch[3], 10);
+    result.departureDate = formatIsoDate(resolveYearForMonth(month, explicitYear), month, day);
+    result.isFlexibleDate = false;
+    return;
+  }
+
+  // ○月○日〜○日形式
+  const dateRangeMatch = cleaned.match(/(\d+)月\s*(\d+)日?\s*[〜~ー－\-]+\s*(?:(\d+)月\s*)?(\d+)日?/);
+  if (dateRangeMatch) {
+    const startMonth = parseInt(dateRangeMatch[1], 10);
+    const startDay = parseInt(dateRangeMatch[2], 10);
+    const endMonth = dateRangeMatch[3] ? parseInt(dateRangeMatch[3], 10) : startMonth;
+    const endDay = parseInt(dateRangeMatch[4], 10);
+    const startYear = resolveYearForMonth(startMonth);
+    const endYear = endMonth < startMonth ? startYear + 1 : startYear;
+
+    result.departureDate = formatIsoDate(startYear, startMonth, startDay);
+    result.returnDate = formatIsoDate(endYear, endMonth, endDay);
+    result.isFlexibleDate = false;
+    return;
+  }
+
+  const fullDateMatch = cleaned.match(/(\d+)月\s*(\d+)日/);
+  if (fullDateMatch) {
+    const month = parseInt(fullDateMatch[1], 10);
+    const day = parseInt(fullDateMatch[2], 10);
+    result.departureDate = formatIsoDate(resolveYearForMonth(month), month, day);
+    result.isFlexibleDate = false;
+    return;
+  }
+
+  const monthMatch = cleaned.match(/(\d+)月/);
+  if (monthMatch) {
+    const month = parseInt(monthMatch[1], 10);
+    const adjustedYear = resolveYearForMonth(month);
+    const lastDay = new Date(adjustedYear, month, 0).getDate();
+
+    if (cleaned.includes('上旬') || cleaned.includes('頭') || cleaned.includes('初め') || cleaned.includes('初旬')) {
+      result.departureDateStart = formatIsoDate(adjustedYear, month, 1);
+      result.departureDateEnd = formatIsoDate(adjustedYear, month, 10);
+      result.dateRangeLabel = '上旬';
+    } else if (cleaned.includes('中旬') || cleaned.includes('半ば')) {
+      result.departureDateStart = formatIsoDate(adjustedYear, month, 11);
+      result.departureDateEnd = formatIsoDate(adjustedYear, month, 20);
+      result.dateRangeLabel = '中旬';
+    } else if (cleaned.includes('下旬') || cleaned.includes('末') || cleaned.includes('終わり')) {
+      result.departureDateStart = formatIsoDate(adjustedYear, month, 21);
+      result.departureDateEnd = formatIsoDate(adjustedYear, month, lastDay);
+      result.dateRangeLabel = '下旬';
+    } else {
+      result.departureDateStart = formatIsoDate(adjustedYear, month, 1);
+      result.departureDateEnd = formatIsoDate(adjustedYear, month, lastDay);
+      result.dateRangeLabel = '';
+    }
+    result.isFlexibleDate = true;
+  }
 }
 
 /**
@@ -147,68 +267,12 @@ function extractFlightParamsFromText(message: string): any {
     }
   }
   
-  // 時期を抽出
-  const timeMatch = message.match(/(?:いきたい時期|行きたい時期|出発時期)[:\s：]*([^\n,、]+)/i);
-  if (timeMatch) {
-    const timeStr = timeMatch[1].trim();
-    const year = new Date().getFullYear();
-    
-    // パターン1: 具体的な日付範囲（○月○日〜○日、○月○〜○、○月○日〜○月○日）
-    // 例: 「5月24〜25」「5月24日〜25日」「5月24〜25日」「5月24日〜6月1日」
-    const dateRangeMatch = timeStr.match(/(\d+)月\s*(\d+)日?\s*[〜~ー－\-]+\s*(?:(\d+)月\s*)?(\d+)日?/);
-    if (dateRangeMatch) {
-      const startMonth = parseInt(dateRangeMatch[1]);
-      const startDay = parseInt(dateRangeMatch[2]);
-      const endMonth = dateRangeMatch[3] ? parseInt(dateRangeMatch[3]) : startMonth;
-      const endDay = parseInt(dateRangeMatch[4]);
-      
-      const startAdjustedYear = startMonth < new Date().getMonth() + 1 ? year + 1 : year;
-      const endAdjustedYear = endMonth < startMonth ? startAdjustedYear + 1 : startAdjustedYear;
-      
-      result.departureDate = `${startAdjustedYear}-${startMonth.toString().padStart(2, '0')}-${startDay.toString().padStart(2, '0')}`;
-      result.returnDate = `${endAdjustedYear}-${endMonth.toString().padStart(2, '0')}-${endDay.toString().padStart(2, '0')}`;
-      result.isFlexibleDate = false;
-    }
-    // パターン2: 具体的な出発日のみ（○月○日）
-    else {
-      const fullDateMatch = timeStr.match(/(\d+)月\s*(\d+)日/);
-      if (fullDateMatch) {
-        const month = parseInt(fullDateMatch[1]);
-        const day = parseInt(fullDateMatch[2]);
-        const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
-        
-        result.departureDate = `${adjustedYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        result.isFlexibleDate = false;
-      }
-      // パターン3: 抽象的な期間（○月、○月上旬、○月末など）
-      else {
-        const monthMatch = timeStr.match(/(\d+)月/);
-        if (monthMatch) {
-          const month = parseInt(monthMatch[1]);
-          const adjustedYear = month < new Date().getMonth() + 1 ? year + 1 : year;
-          const lastDay = new Date(adjustedYear, month, 0).getDate();
-          
-          if (timeStr.includes('上旬') || timeStr.includes('頭') || timeStr.includes('初め') || timeStr.includes('初旬')) {
-            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
-            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-10`;
-            result.dateRangeLabel = '上旬';
-          } else if (timeStr.includes('中旬') || timeStr.includes('半ば')) {
-            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-11`;
-            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-20`;
-            result.dateRangeLabel = '中旬';
-          } else if (timeStr.includes('下旬') || timeStr.includes('末') || timeStr.includes('終わり')) {
-            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-21`;
-            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
-            result.dateRangeLabel = '下旬';
-          } else {
-            result.departureDateStart = `${adjustedYear}-${month.toString().padStart(2, '0')}-01`;
-            result.departureDateEnd = `${adjustedYear}-${month.toString().padStart(2, '0')}-${lastDay}`;
-            result.dateRangeLabel = '';
-          }
-          result.isFlexibleDate = true;
-        }
-      }
-    }
+  // 時期を抽出（次行に値があるテンプレ形式にも対応）
+  const timeStr = extractTemplateFieldValue(message, 'いきたい時期')
+    || extractTemplateFieldValue(message, '行きたい時期')
+    || extractTemplateFieldValue(message, '出発時期');
+  if (timeStr) {
+    parseTravelTimeString(timeStr, result);
   }
   
   // 期間を抽出（5泊6日など）
@@ -990,3 +1054,6 @@ async function handleHotelQuery(userId: string, message: string, context?: Fligh
 function generateHotelOfferMessage(): string {
   return `\n\n━━━━━━━━━━━━━━━\n\n🏨 ホテルは予約されますか？\n\n「はい」と返信すると、\n最安値のホテルをお探しします！`;
 }
+
+/** @internal テスト用 */
+export { extractFlightParamsFromText };
