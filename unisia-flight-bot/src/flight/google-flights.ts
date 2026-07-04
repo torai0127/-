@@ -850,10 +850,10 @@ export function generateGoogleFlightsQueryUrl(params: FlightSearchParams): strin
   let q: string;
   if (params.returnDate && params.tripType !== 'one_way') {
     // 往復
-    q = `Flights from ${originCode} to ${destCode} on ${params.departureDate} through ${params.returnDate} ${paxStr}`;
+    q = `Round trip flights from ${originCode} to ${destCode} on ${params.departureDate} through ${params.returnDate} ${paxStr}`;
   } else {
     // 片道
-    q = `Flights from ${originCode} to ${destCode} on ${params.departureDate} ${paxStr}`;
+    q = `One way flights from ${originCode} to ${destCode} on ${params.departureDate} ${paxStr}`;
   }
 
   console.log(`📎 Generated query: ${q}`);
