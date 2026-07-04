@@ -319,10 +319,8 @@ export function formatComparisonResultForLine(result: FlightComparisonResult): s
     response += `🎉 最大 ${savingsFormatted} お得！\n\n`;
   }
   
-  // 予約リンク（最安値のサイトのリンクを表示、なければGoogle Flights）
-  const bookingUrl = (cheapest?.deepLink && cheapest.deepLink.length > 0) 
-    ? cheapest.deepLink 
-    : googleFlightsUrl;
+  // 常にGoogle Flightsのリンクを表示（検索条件が反映される）
+  const bookingUrl = googleFlightsUrl;
   
   response += `🔗 最安値で予約する\n`;
   response += `${bookingUrl}\n\n`;
