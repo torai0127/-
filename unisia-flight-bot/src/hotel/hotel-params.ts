@@ -92,8 +92,9 @@ export async function extractHotelParams(
 注意:
 - 日付が相対的（「来週」「3日後」など）な場合は具体的な日付に変換
 - 「1週間」などの期間表現はチェックアウト日を計算
-- 既存の情報と新しい情報をマージ
-- 情報がない項目は既存の値を維持、なければnull`;
+- ユーザーが新しく指定した情報は、既存の値を必ず上書きしてください
+- ユーザーが明示的に指定していない項目のみ、既存の値を維持
+- 情報がない項目はnull`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -114,11 +115,11 @@ export async function extractHotelParams(
     const parsed = JSON.parse(content);
     
     const result: ExtractedHotelParams = {
-      location: parsed.location || existingParams?.location || '',
-      checkIn: parsed.checkIn || existingParams?.checkIn || '',
-      checkOut: parsed.checkOut || existingParams?.checkOut || '',
-      adults: parsed.adults || existingParams?.adults || 1,
-      rooms: parsed.rooms || existingParams?.rooms || 1,
+      location: parsed.location !== null && parsed.location !== undefined ? parsed.location : (existingParams?.location || ''),
+      checkIn: parsed.checkIn !== null && parsed.checkIn !== undefined ? parsed.checkIn : (existingParams?.checkIn || ''),
+      checkOut: parsed.checkOut !== null && parsed.checkOut !== undefined ? parsed.checkOut : (existingParams?.checkOut || ''),
+      adults: parsed.adults !== null && parsed.adults !== undefined ? parsed.adults : (existingParams?.adults || 1),
+      rooms: parsed.rooms !== null && parsed.rooms !== undefined ? parsed.rooms : (existingParams?.rooms || 1),
       children: parsed.children || 0,
       stars: parsed.stars || undefined,
       maxPrice: parsed.maxPrice || undefined,
