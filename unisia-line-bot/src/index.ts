@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { WebhookEvent } from '@line/bot-sdk';
 import dotenv from 'dotenv';
 import { handleEvent } from './line/handler.js';
-import { isLineConfigured } from './line/client.js';
+import { isLineConfigured, lineClient } from './line/client.js';
 import { validateLineToken, getLastTokenValidation } from './line/token-validator.js';
 import { initDatabase } from './db/index.js';
 
@@ -68,6 +68,39 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   }
 
   res.json({ success: true });
+});
+
+app.post('/api/notify/watch', express.json(), async (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  if (!process.env.ADMIN_API_KEY || apiKey !== process.env.ADMIN_API_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const lineUserId = String(req.body?.lineUserId || '').trim();
+  const message = String(req.body?.message || '').trim();
+  if (!lineUserId || !message) {
+    return res.status(400).json({ error: 'lineUserId and message required' });
+  }
+
+  if (!lineClient) {
+    return res.status(500).json({ error: 'LINE client not configured' });
+  }
+
+  let text = message;
+  if (text.length > 4900) {
+    text = text.slice(0, 4900);
+  }
+
+  try {
+    await lineClient.pushMessage({
+      to: lineUserId,
+      messages: [{ type: 'text', text }],
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Watch notification error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send notification' });
+  }
 });
 
 // その他のエンドポイント用
